@@ -4,6 +4,7 @@ using UnityEngine;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Text;
 using System;
 using System.Runtime.InteropServices;
 using System.IO;
@@ -37,12 +38,35 @@ public class NetworkManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        serverOn();
     }
 
     // Update is called once per frame
     void Update()
     {
         
+    }
+
+    void serverOn()
+    {
+        sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        ip = IPAddress.Parse(strIP);
+        endPoint = new IPEndPoint(ip, port);
+        sock.Connect(endPoint);
+    }
+
+    int euckrCodepage = 51949;
+
+    public void SendPacket2Server(object obj)
+    {
+        byte[] userByte = ObjToByte(obj);
+        sock.Send(userByte, 0, userByte.Length, SocketFlags.None);
+    }
+
+    private byte[] ObjToByte(object obj)
+    {
+        string json = JsonUtility.ToJson(obj);
+        byte[] returnValue = Encoding.UTF8.GetBytes(json);
+        return returnValue;
     }
 }
