@@ -55,8 +55,6 @@ public class NetworkManager : MonoBehaviour
         sock.Connect(endPoint);
     }
 
-    int euckrCodepage = 51949;
-
     public void SendPacket2Server(object obj)
     {
         byte[] userByte = ObjToByte(obj);

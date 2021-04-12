@@ -1,7 +1,7 @@
 const redis = require("redis");
 const dgram = require("dgram");
 const udpServer = dgram.createSocket("udp4");
-const PORT = 8000;
+const PORT = 9000;
 const HOST = "127.0.0.1";
 require("dotenv").config();
 const db = require("./model/index");
@@ -31,9 +31,16 @@ udpServer.on("message", (message, remote) => {
             function OnLogin(user) {
                 if (user) {
                     //redis publish
-                    sub.on("subscribe", (channel, count) => {
-                        pub.publish("Session", "첫 번째 메시지");
-                    });
+                    // sub.on("subscribe", (channel, count) => {
+                    //     pub.publish("Session", "첫 번째 메시지");
+                    // });
+                    const userInfo = {
+                        nickname: user.nickname,
+                        address: remote.address,
+                        port: remote.port,
+                    };
+                    const message = JSON.stringify(userInfo);
+                    pub.publish("Session", message);
                 }
             }
             function UserNotFound() {
@@ -50,15 +57,15 @@ udpServer.on("message", (message, remote) => {
 
 udpServer.bind(PORT, HOST);
 
-sub.on("subscribe", (channel, count) => {
-    const user = {
-        id: "이데아",
-        address: "127.0.0.1",
-        port: "8000",
-    };
-    const message = JSON.stringify(user);
-    pub.publish("Session", message);
-});
+// sub.on("subscribe", (channel, count) => {
+//     const user = {
+//         id: "이데아",
+//         address: "127.0.0.1",
+//         port: "8000",
+//     };
+//     const message = JSON.stringify(user);
+//     pub.publish("Session", message);
+// });
 
 // sub.on("message", (channel, message) => {
 //     console.log("채널명" + channel + "메시지" + message);
