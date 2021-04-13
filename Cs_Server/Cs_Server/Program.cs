@@ -55,48 +55,85 @@ namespace Cs_Server
             Address address = new Address();
             address.address = userInfo["address"].ToString();
             address.port = Int32.Parse(userInfo["port"].ToString());
-            players.Add(address);
-            Sql_Read(userInfo["nickname"].ToString(), players);
+            address.nickname = userInfo["nickname"].ToString();
+            string findOnMapQuery = "SELECT * FROM Player WHERE onLogin=true";
+            SendOtherUsersPacket(address, findOnMapQuery); //현재 접속중인 모든 플레이어를 방금 접속한 플레이어한테만 보냄
+            players.Add(address); //새로 접속한 플레이어를 월드 접속중에 추가
+            string query = "SELECT * FROM Player WHERE nickname='" + userInfo["nickname"].ToString() + "'";
+            Sql_Read(players, address, query); // 새로 접속한 플레이어의 정보만을 db에서 찾아내고 모든 클라에 보냄
+            Sql_ToOnLine(address.nickname);//접속해서 온라인상태로 변경
         }
 
-        private static void Sql_Insert()
+        private static void SendOtherUsersPacket(Address address, string query)
         {
+            NetWork useSocket = new NetWork();
             using (MySqlConnection connection = new MySqlConnection("Server=localhost;Port=3306;Database=MORPG;Uid=root;Pwd=osm980811"))
             {
-                string insertQuery = "INSERT INTO Player(nickname,exp,map,x,y,z,angle_x,angle_y,angle_z) VALUES('이데아',0,0,0.0,0.0,0.0,0.0,180.0,0.0)";
-                try//예외 처리
+                try
                 {
                     connection.Open();
-                    MySqlCommand command = new MySqlCommand(insertQuery, connection);
-
-                    // 만약에 내가처리한 Mysql에 정상적으로 들어갔다면 메세지를 보여주라는 뜻이다
-                    if (command.ExecuteNonQuery() == 1)
+                    MySqlCommand command = new MySqlCommand(query, connection);
+                    MySqlDataReader table = command.ExecuteReader();
+                    while (table.Read())
                     {
-                        Console.WriteLine("인서트 성공");
+                        var json = new JObject();
+                        json.Add("nickname", table["nickname"].ToString());
+                        json.Add("x", Int32.Parse(table["x"].ToString()));
+                        json.Add("y", Int32.Parse(table["y"].ToString()));
+                        json.Add("z", Int32.Parse(table["z"].ToString()));
+                        json.Add("angle_x", Int32.Parse(table["angle_x"].ToString()));
+                        json.Add("angle_y", Int32.Parse(table["angle_y"].ToString()));
+                        json.Add("angle_z", Int32.Parse(table["angle_z"].ToString()));
+                        json.Add("exp", Int32.Parse(table["exp"].ToString()));
+                        json.Add("map", Int32.Parse(table["map"].ToString()));
+                        json.Add("message", "OtherPlayers");
+                        useSocket.SendPacket2Server(json, address.address, address.port);
                     }
-                    else
-                    {
-                        Console.WriteLine("인서트 실패");
-                    }
-
+                    table.Close();
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine("실패");
                     Console.WriteLine(ex.ToString());
                 }
-
             }
         }
-        private static void Sql_Read(string nickname, List<Address> players)
+
+        private static void Sql_ToOnLine(string nickname)
+        {
+            using (MySqlConnection connection = new MySqlConnection("Server=localhost;Port=3306;Database=MORPG;Uid=root;Pwd=osm980811"))
+            {
+                string query = "UPDATE Player SET onLogin=true WHERE nickname='" + nickname + "'";
+                try
+                {
+                    connection.Open();
+                    MySqlCommand command = new MySqlCommand(query, connection);
+                    if (command.ExecuteNonQuery() == 1)
+                    {
+                        Console.WriteLine("수정 성공");
+                    }
+                    else
+                    {
+                        Console.WriteLine("인서트 실패");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("실패");
+                    Console.WriteLine(ex.ToString());
+                }
+            }
+        }
+
+        private static void Sql_Read(List<Address> players, Address address, string query)
         {
             using (MySqlConnection connection = new MySqlConnection("Server=localhost;Port=3306;Database=MORPG;Uid=root;Pwd=osm980811"))
             {
                 try//예외 처리
                 {
                     connection.Open();
-                    string insertQuery = "SELECT * FROM Player WHERE nickname='" + nickname + "'";
-                    MySqlCommand command = new MySqlCommand(insertQuery, connection);
+                    
+                    MySqlCommand command = new MySqlCommand(query, connection);
                     MySqlDataReader table = command.ExecuteReader();
 
                     // 만약에 내가처리한 Mysql에 정상적으로 들어갔다면 메세지를 보여주라는 뜻이다
@@ -115,13 +152,22 @@ namespace Cs_Server
                         json.Add("angle_z", Int32.Parse(table["angle_z"].ToString()));
                         json.Add("exp", Int32.Parse(table["exp"].ToString()));
                         json.Add("map", Int32.Parse(table["map"].ToString()));
-                        players.ForEach(SendPacket);
-                        void SendPacket(Address s)
+                        //json.Add("message", "Connect");
+
+                        players.ForEach(ConnectNewUser);
+                        void ConnectNewUser(Address s)
                         {
-                            //Console.WriteLine(s.port);
-                            useSocket.SendPacket2Server(json, s.address, s.port);
+                            if(s.address == address.address && s.port == address.port)
+                            {
+                                json.Add("message", "Connect");
+                                useSocket.SendPacket2Server(json, s.address, s.port);
+                            }
+                            else
+                            {
+                                json.Add("message", "OtherPlayers");
+                                useSocket.SendPacket2Server(json, s.address, s.port);
+                            }
                         }
-                        //useSocket.SendPacket2Server();
                     }
                     table.Close(); 
 
@@ -139,6 +185,7 @@ namespace Cs_Server
     {
         public string address;
         public int port;
+        public string nickname;
     }
     public class NetWork
     {

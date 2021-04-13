@@ -9,7 +9,7 @@ public class PlayerController : MonoBehaviour
 {
     #region Variable & Property
     [SerializeField]
-    private Camera mainCamera;
+    //private Camera mainCamera;
     public Animator Animator {private set; get;}
     public NavMeshAgent NavMeshAgent {private set; get;}
     public PlayerState PlayerState {set; get;}
@@ -24,15 +24,18 @@ public class PlayerController : MonoBehaviour
     CharacterPosition charaPos;
     private Vector3 moveDirection;
     [SerializeField]
-    public float speed = 5.0f;
+    public float speed = 10.0f;
     #endregion
 
     private void Awake(){
         Animator = GetComponentInChildren<Animator>();
-        NavMeshAgent = GetComponent<NavMeshAgent>();
+        //NavMeshAgent = GetComponent<NavMeshAgent>();
         PlayerState = PlayerState.Idle;
+        charaPos.x = transform.position.x;
+        charaPos.y = transform.position.y;
+        charaPos.z = transform.position.z;
         charaPos.angle_x = transform.rotation.x;
-        charaPos.angle_y = 180;
+        charaPos.angle_y = transform.rotation.y;
         charaPos.angle_z = transform.rotation.z;
     }
 
@@ -50,30 +53,6 @@ public class PlayerController : MonoBehaviour
         SimpleFSM(); //플레이어의 상태(PlayerState)에 따라 행동 [Idle, Move, Etc..]
     }
 
-    private void ObjectDetector()
-    {
-        Ray ray;
-        RaycastHit hit;
-        float rayDistance = 50.0f;
-        LayerMask layerMask = -1; // -1 = Everything
-
-        if(Input.GetMouseButton(0))
-        {
-            ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-            if(Physics.Raycast(ray, out hit, rayDistance, layerMask))
-            {
-                if(Vector3.Distance(transform.position, hit.point) < 0.5f)
-                //현재 플레이어가 서있는 곳이나 너무 가까운 곳을 클릭했을 때는 이동하지 않음.
-                {
-                    return;
-                }
-                PlayerState = PlayerState.Move; //플레이어 상태 설정
-                Animator.SetFloat("movementSpeed", 1.0f); //애니메이션 설정
-                NavMeshAgent.SetDestination(hit.point); //목표 위치 설정
-            }
-        }
-    }
-
     private void MoveCharacter()
     {
         GetKey();
@@ -85,10 +64,10 @@ public class PlayerController : MonoBehaviour
     private void GetKey()
     {
         if(Input.GetKey(KeyCode.LeftArrow)){
-            charaPos.angle_y -= 3;
+            charaPos.angle_y -= 2;
         }
         if(Input.GetKey(KeyCode.RightArrow)){
-            charaPos.angle_y += 3;
+            charaPos.angle_y += 2;
         }
         if(Input.GetKey(KeyCode.UpArrow)){
             charaPos.x = speed * Mathf.Sin(charaPos.angle_y * Mathf.PI / 180);

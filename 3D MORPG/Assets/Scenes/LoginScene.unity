@@ -123,6 +123,51 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &129355935
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 129355936}
+  - component: {fileID: 129355937}
+  m_Layer: 0
+  m_Name: NetworkManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &129355936
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 129355935}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 686, y: 163, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &129355937
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 129355935}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b9c2e21804a86e4e8119c79eb364931, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  PlayerPrefab: {fileID: 2052716251097246508, guid: 4a6eb057221099d4e893485f37176a21, type: 3}
+  PlayerPrefab2: {fileID: 6573083590682111246, guid: 8da768836b87bd34b9367ed172f80564, type: 3}
 --- !u!1 &181160285
 GameObject:
   m_ObjectHideFlags: 0
@@ -351,8 +396,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 312610411}
   m_TextComponent: {fileID: 181160287}
   m_Placeholder: {fileID: 721760984}
-  m_ContentType: 0
-  m_InputType: 0
+  m_ContentType: 7
+  m_InputType: 2
   m_AsteriskChar: 42
   m_KeyboardType: 0
   m_LineType: 0
@@ -701,7 +746,6 @@ GameObject:
   - component: {fileID: 1546997955}
   - component: {fileID: 1546997954}
   - component: {fileID: 1546997953}
-  - component: {fileID: 1546997957}
   - component: {fileID: 1546997956}
   m_Layer: 0
   m_Name: Main Camera
@@ -790,18 +834,6 @@ MonoBehaviour:
   Id: {fileID: 1908105306}
   Password: {fileID: 312610410}
   Button: {fileID: 1170236429}
---- !u!114 &1546997957
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1546997952}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b9c2e21804a86e4e8119c79eb364931, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1660478459
 GameObject:
   m_ObjectHideFlags: 0

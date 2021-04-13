@@ -31,7 +31,7 @@ public class Login : MonoBehaviour
         loginInfo.message = "loginRequest";
         loginInfo.id = Id.text;
         loginInfo.password = Password.text;
-        Network_Login manager = GameObject.Find("Main Camera").GetComponent<Network_Login>();
+        Network_Login manager = GameObject.Find("NetworkManager").GetComponent<Network_Login>();
         manager.SendPacket2Server(loginInfo);
     }
 }

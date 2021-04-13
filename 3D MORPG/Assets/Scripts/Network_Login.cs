@@ -8,6 +8,7 @@ using System.Text;
 using System;
 using System.Runtime.InteropServices;
 using System.IO;
+using UnityEngine.SceneManagement;
 [Serializable]
 public class Network_Login : MonoBehaviour
 {
@@ -18,7 +19,7 @@ public class Network_Login : MonoBehaviour
     string strIP = "127.0.0.1";
 
     int port = 9000;
-    int bindPort = 8500;
+    int bindPort = 8400;
     Socket sock;
     IPAddress ip;
     IPEndPoint endPoint;
@@ -29,23 +30,29 @@ public class Network_Login : MonoBehaviour
     #endregion
 
     #region Variable
-    private class Players
+    public class Player
     {
-        string nickname;
-        float x;
-        float y;
-        float z;
-        float angle_x;
-        float angle_y;
-        float angle_z;
-        int map;
-        int exp;
-        double currentTime;
+        public string nickname;
+        public float x;
+        public float y;
+        public float z;
+        public float angle_x;
+        public float angle_y;
+        public float angle_z;
+        public int map;
+        public int exp;
+        //double currentTime;
+        public string message;
     };
     private double latency;
+    public GameObject PlayerPrefab;
+    public GameObject PlayerPrefab2;
 
     #endregion
     // Start is called before the first frame update
+    void Awake() {
+        DontDestroyOnLoad(gameObject);
+    }
     void Start()
     {
         serverOn();
@@ -57,7 +64,7 @@ public class Network_Login : MonoBehaviour
         ip = IPAddress.Parse(strIP);
         endPoint = new IPEndPoint(IPAddress.Any, 0);
         serverEP = new IPEndPoint(ip, port);
-        bindEP = new IPEndPoint(ip, bindPort);
+        bindEP = new IPEndPoint(IPAddress.Any, 0);
         sock.Bind(bindEP);
         remoteEP = (EndPoint)endPoint;
         ServerCheck_thread = new Thread(ServerCheck);
@@ -96,8 +103,35 @@ public class Network_Login : MonoBehaviour
             {
                 b = Buffer.Dequeue();
             }
-            Debug.Log(b); //버퍼를 사용
+            //Debug.Log(b); //버퍼를 사용
+            Player connectPlayer = StringToObj(b);
+            switch(connectPlayer.message){
+                case "Connect":
+                    ConnectNewPlayer(connectPlayer);
+                    break;
+                case "OtherPlayers":
+                    ConnectOtherPlayer(connectPlayer);
+                    break;
+                default:
+                    break;
+            }
         }
+    }
+
+    void ConnectNewPlayer(Player player)
+    {
+        //씬전환, 데이터 남기기.
+        SceneManager.LoadScene("SampleScene");
+        Vector3 position = new Vector3(player.x, player.y, player.z);
+        Vector3 angle = new Vector3(player.angle_x, player.angle_y, player.angle_z);
+        CreatePlayer(player.nickname, position, angle);
+    }
+
+    void ConnectOtherPlayer(Player player)
+    {
+        Vector3 position = new Vector3(player.x, player.y, player.z);
+        Vector3 angle = new Vector3(player.angle_x, player.angle_y, player.angle_z);
+        CreateOtherPlayer(player.nickname, position, angle);
     }
 
     // Update is called once per frame
@@ -118,5 +152,23 @@ public class Network_Login : MonoBehaviour
         string json = JsonUtility.ToJson(obj);
         byte[] returnValue = Encoding.UTF8.GetBytes(json);
         return returnValue;
+    }
+
+    public Player StringToObj(string str)
+    {
+        Player newPlayer = JsonUtility.FromJson<Player>(str);
+        return newPlayer;
+    }
+    public void CreatePlayer(string nickname, Vector3 position, Vector3 angle){
+        var obj = Instantiate(PlayerPrefab, position, Quaternion.Euler(angle));
+        obj.name = nickname;
+        DontDestroyOnLoad(obj);
+        //obj.Id = id;
+    }
+    public void CreateOtherPlayer(string nickname, Vector3 position, Vector3 angle){
+        var obj = Instantiate(PlayerPrefab2, position, Quaternion.Euler(angle));
+        obj.name = nickname;
+        DontDestroyOnLoad(obj);
+        //obj.Id = id;
     }
 }
