@@ -20,11 +20,23 @@ public class PlayerController : MonoBehaviour
         public float angle_x;
         public float angle_y;
         public float angle_z;
+        public double currentTime;
+        public PlayerMove playerMove;
+        public string message;
+        public string nickname;
     }
     CharacterPosition charaPos;
     private Vector3 moveDirection;
-    [SerializeField]
-    public float speed = 10.0f;
+    public float speed = 3.0f;
+    public enum PlayerMove{
+        stop,
+        turn_left,
+        turn_right,
+        moveFront,
+        moveBack
+    };
+    public PlayerMove before_move = PlayerMove.stop;
+    public PlayerMove after_move = PlayerMove.stop;
     #endregion
 
     private void Awake(){
@@ -56,34 +68,65 @@ public class PlayerController : MonoBehaviour
     private void MoveCharacter()
     {
         GetKey();
+        CheckMove();
         moveDirection = new Vector3(charaPos.x, charaPos.y, charaPos.z);
+        Debug.Log(moveDirection.x);
         transform.position += moveDirection * Time.deltaTime;
         transform.rotation = Quaternion.Euler(new Vector3(0, charaPos.angle_y, 0));
     }
 
     private void GetKey()
     {
+        if(charaPos.angle_y > 360){
+            charaPos.angle_y = charaPos.angle_y - 360;
+        }
+        if(charaPos.angle_y < 0){
+            charaPos.angle_y = charaPos.angle_y + 360;
+        }
         if(Input.GetKey(KeyCode.LeftArrow)){
             charaPos.angle_y -= 2;
+            charaPos.playerMove = PlayerMove.turn_left;
+            before_move = PlayerMove.turn_left;
         }
         if(Input.GetKey(KeyCode.RightArrow)){
             charaPos.angle_y += 2;
+            charaPos.playerMove = PlayerMove.turn_right;
+            before_move = PlayerMove.turn_right;
         }
         if(Input.GetKey(KeyCode.UpArrow)){
             charaPos.x = speed * Mathf.Sin(charaPos.angle_y * Mathf.PI / 180);
             charaPos.z = speed * Mathf.Cos(charaPos.angle_y * Mathf.PI / 180);
             PlayerState = PlayerState.Move;
+            charaPos.playerMove = PlayerMove.moveFront;
+            before_move = PlayerMove.moveFront;
         }
         if(Input.GetKey(KeyCode.DownArrow)){
             charaPos.x = -speed * Mathf.Sin(charaPos.angle_y * Mathf.PI / 180);
             charaPos.z = -speed * Mathf.Cos(charaPos.angle_y * Mathf.PI / 180);
             PlayerState = PlayerState.Move;
+            charaPos.playerMove = PlayerMove.moveBack;
+            before_move = PlayerMove.moveBack;
         }
         if(!Input.GetKey(KeyCode.LeftArrow) && !Input.GetKey(KeyCode.RightArrow) && !Input.GetKey(KeyCode.UpArrow) && !Input.GetKey(KeyCode.DownArrow)){
-            charaPos.x = 0.0f;
-            charaPos.z = 0.0f;
+            charaPos.x = 0;
+            charaPos.z = 0;
             PlayerState = PlayerState.Idle;
+            charaPos.playerMove = PlayerMove.stop;
+            before_move = PlayerMove.stop;
         }
+    }
+
+    private void CheckMove()
+    {
+        if(before_move != after_move)
+        {
+            charaPos.x = transform.position.x;
+            charaPos.y = transform.position.y;
+            charaPos.z = transform.position.z;
+            Network_Login NetworkManager = GameObject.Find("NetworkManager").GetComponent<Network_Login>();
+            NetworkManager.SendPacket2CsServer(charaPos);
+        }
+        after_move = before_move;
     }
 
     private void SimpleFSM()

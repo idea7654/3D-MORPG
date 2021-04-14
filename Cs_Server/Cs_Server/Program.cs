@@ -26,7 +26,8 @@ namespace Cs_Server
             //userName = Console.ReadLine();
             //Sql_Insert();
             NetWork useSocket = new NetWork();
-            useSocket.Start();
+            Thread socketThread = new Thread(new ThreadStart(useSocket.Start));
+            socketThread.Start();
             // Create pub/sub
             var pubsub = connection.GetSubscriber();
 
@@ -39,7 +40,7 @@ namespace Cs_Server
             // Messaging here
             while (true)
             {
-                //pubsub.Publish(SessionChannel, "보낼 내용");
+                
             }
         }
 
@@ -205,6 +206,11 @@ namespace Cs_Server
             ip = IPAddress.Parse(strIP);
             endPoint = new IPEndPoint(ip, port);
             sock.Bind(endPoint);
+            while(true)
+            {
+                sock.Receive(recvByte, 0, recvByte.Length, SocketFlags.None);
+                Console.WriteLine(Encoding.Default.GetString(recvByte));
+            }
             //sock.Connect(endPoint);
         }
 
@@ -214,7 +220,7 @@ namespace Cs_Server
             IPEndPoint sender = new IPEndPoint(IPAddress.Parse(targetIP), targetPort);
             EndPoint remote = (EndPoint)sender;
             //sock.Connect(remote);
-            Console.WriteLine(port);
+            //Console.WriteLine(port);
             sock.SendTo(userByte, remote);
         }
 

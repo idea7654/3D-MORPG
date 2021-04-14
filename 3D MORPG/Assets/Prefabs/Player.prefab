@@ -3564,7 +3564,7 @@ GameObject:
   - component: {fileID: 774872348450830021}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3620,6 +3620,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 3
+  before_move: 0
+  after_move: 0
 --- !u!54 &-2741303961783964278
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -4024,6 +4026,10 @@ PrefabInstance:
     - target: {fileID: 9140539432501286415, guid: 00a030ea7d376184694ee57130e5ba84, type: 3}
       propertyPath: m_Name
       value: Weapon_2Hand-Sword
+      objectReference: {fileID: 0}
+    - target: {fileID: 9140539432501286415, guid: 00a030ea7d376184694ee57130e5ba84, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9140539432501709423, guid: 00a030ea7d376184694ee57130e5ba84, type: 3}
       propertyPath: m_RootOrder

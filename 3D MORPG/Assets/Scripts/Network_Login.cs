@@ -26,6 +26,7 @@ public class Network_Login : MonoBehaviour
     EndPoint remoteEP;
     IPEndPoint serverEP;
     IPEndPoint bindEP;
+    IPEndPoint CsServerEP;
     object buffer_lock = new object(); //queue충돌 방지용 lock
     #endregion
 
@@ -65,6 +66,7 @@ public class Network_Login : MonoBehaviour
         endPoint = new IPEndPoint(IPAddress.Any, 0);
         serverEP = new IPEndPoint(ip, port);
         bindEP = new IPEndPoint(IPAddress.Any, 0);
+        CsServerEP = new IPEndPoint(ip, 8000);
         sock.Bind(bindEP);
         remoteEP = (EndPoint)endPoint;
         ServerCheck_thread = new Thread(ServerCheck);
@@ -145,6 +147,12 @@ public class Network_Login : MonoBehaviour
         byte[] userByte = ObjToByte(obj);
         //sock.Send(userByte, 0, userByte.Length, SocketFlags.None);
         sock.SendTo(userByte, serverEP);
+    }
+
+    public void SendPacket2CsServer(object obj)
+    {
+        byte[] userByte = ObjToByte(obj);
+        sock.SendTo(userByte, CsServerEP);
     }
 
     private byte[] ObjToByte(object obj)
