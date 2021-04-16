@@ -7,6 +7,8 @@ ScriptsOnlyBuild:
     - PlayerController
     Unity.Rider.Editor.dll:
     - Packages.Rider.Editor.UnitTesting.CallbackData
+    Unity.Timeline.Editor.dll:
+    - TimelineProjectSettings
     UnityEditor.Graphs.dll:
     - UnityEditor.Graphs.AnimationBlendTree.Graph
     - UnityEditor.Graphs.AnimationBlendTree.GraphGUI
@@ -65,27 +67,27 @@ ScriptsOnlyBuild:
     - Class: 108
       Script: {instanceID: 0}
     - Class: 114
-      Script: {instanceID: 4662}
+      Script: {instanceID: 4668}
     - Class: 114
-      Script: {instanceID: 5284}
+      Script: {instanceID: 5290}
     - Class: 114
-      Script: {instanceID: 5374}
+      Script: {instanceID: 5380}
     - Class: 114
-      Script: {instanceID: 5786}
+      Script: {instanceID: 5792}
     - Class: 114
-      Script: {instanceID: 5954}
+      Script: {instanceID: 5960}
     - Class: 114
-      Script: {instanceID: 5964}
+      Script: {instanceID: 5970}
     - Class: 114
-      Script: {instanceID: 6184}
+      Script: {instanceID: 6190}
     - Class: 114
-      Script: {instanceID: 6254}
+      Script: {instanceID: 6260}
     - Class: 114
-      Script: {instanceID: 6502}
+      Script: {instanceID: 6508}
     - Class: 114
-      Script: {instanceID: 6564}
+      Script: {instanceID: 6570}
     - Class: 114
-      Script: {instanceID: 6640}
+      Script: {instanceID: 6646}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 128
@@ -148,9 +150,9 @@ ScriptsOnlyBuild:
     - Class: 108
       Script: {instanceID: 0}
     - Class: 114
-      Script: {instanceID: 5284}
+      Script: {instanceID: 5290}
     - Class: 114
-      Script: {instanceID: 6322}
+      Script: {instanceID: 6328}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 136
@@ -316,7 +318,7 @@ ScriptsOnlyBuild:
     className: EventTrigger
   - hash:
       serializedVersion: 2
-      Hash: afc5b93a7b192de2dcb3832fe35a5c7e
+      Hash: 1e19ad687e8beb8a0fa7458fb92274a5
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: PlayerController
@@ -442,7 +444,7 @@ ScriptsOnlyBuild:
     className: AspectRatioFitter
   - hash:
       serializedVersion: 2
-      Hash: 2a9223c23995a25b961e2fd27df2695f
+      Hash: e151b13cf6b9e5b7235d06a7c5812053
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: Network_Login
@@ -618,4 +620,4 @@ ScriptsOnlyBuild:
   scenePathNames:
   - Assets/Scenes/LoginScene.unity
   - Assets/Scenes/SampleScene.unity
-  playerPath: C:/Users/Oh/Desktop/3D MORPG.exe
+  playerPath: C:/Users/Oh/Desktop/sample/3D MORPG.exe

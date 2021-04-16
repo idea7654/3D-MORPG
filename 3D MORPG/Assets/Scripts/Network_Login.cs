@@ -13,7 +13,7 @@ using UnityEngine.SceneManagement;
 public class Network_Login : MonoBehaviour
 {
     #region SOCKET_SET
-    byte[] recvByte = new byte[10000];
+    byte[] recvByte = new byte[512];
     Thread ServerCheck_thread;
     Queue<string> Buffer = new Queue<string>();
     string strIP = "127.0.0.1";
@@ -28,6 +28,7 @@ public class Network_Login : MonoBehaviour
     IPEndPoint bindEP;
     IPEndPoint CsServerEP;
     object buffer_lock = new object(); //queue충돌 방지용 lock
+    public string PlayerName;
     #endregion
 
     #region Variable
@@ -44,6 +45,7 @@ public class Network_Login : MonoBehaviour
         public int exp;
         //double currentTime;
         public string message;
+        public double currentTime;
     };
     private double latency;
     public GameObject PlayerPrefab;
@@ -114,10 +116,21 @@ public class Network_Login : MonoBehaviour
                 case "OtherPlayers":
                     ConnectOtherPlayer(connectPlayer);
                     break;
+                case "PlayerMove":
+                    MovePlayer(connectPlayer);
+                    break;
                 default:
                     break;
             }
         }
+    }
+
+    void MovePlayer(Player player)
+    {
+        //Debug.Log(DateTime.Now.TimeOfDay.TotalMilliseconds - player.currentTime);
+        //레이턴시 대강 6ms정도(솔플, 로컬기준)
+        GameObject target = GameObject.Find(player.nickname);
+        target.transform.position = new Vector3(player.x, 0, player.z);
     }
 
     void ConnectNewPlayer(Player player)
@@ -131,6 +144,7 @@ public class Network_Login : MonoBehaviour
 
     void ConnectOtherPlayer(Player player)
     {
+        Debug.Log("일단 여기 오기는 함ㅋ");
         Vector3 position = new Vector3(player.x, player.y, player.z);
         Vector3 angle = new Vector3(player.angle_x, player.angle_y, player.angle_z);
         CreateOtherPlayer(player.nickname, position, angle);
@@ -170,6 +184,7 @@ public class Network_Login : MonoBehaviour
     public void CreatePlayer(string nickname, Vector3 position, Vector3 angle){
         var obj = Instantiate(PlayerPrefab, position, Quaternion.Euler(angle));
         obj.name = nickname;
+        PlayerName = nickname;
         DontDestroyOnLoad(obj);
         //obj.Id = id;
     }

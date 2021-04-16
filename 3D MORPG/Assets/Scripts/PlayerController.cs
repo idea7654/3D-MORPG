@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
-
+using System;
 public enum PlayerState { Idle = 0, Move }
 
 public class PlayerController : MonoBehaviour
@@ -42,19 +42,21 @@ public class PlayerController : MonoBehaviour
     private void Awake(){
         Animator = GetComponentInChildren<Animator>();
         //NavMeshAgent = GetComponent<NavMeshAgent>();
+
         PlayerState = PlayerState.Idle;
+    }
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        charaPos.nickname = GameObject.Find("NetworkManager").GetComponent<Network_Login>().PlayerName.ToString();
+        charaPos.message = "PlayerMove";
         charaPos.x = transform.position.x;
         charaPos.y = transform.position.y;
         charaPos.z = transform.position.z;
         charaPos.angle_x = transform.rotation.x;
         charaPos.angle_y = transform.rotation.y;
         charaPos.angle_z = transform.rotation.z;
-    }
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        
     }
 
     // Update is called once per frame
@@ -70,26 +72,29 @@ public class PlayerController : MonoBehaviour
         GetKey();
         CheckMove();
         moveDirection = new Vector3(charaPos.x, charaPos.y, charaPos.z);
-        Debug.Log(moveDirection.x);
         transform.position += moveDirection * Time.deltaTime;
         transform.rotation = Quaternion.Euler(new Vector3(0, charaPos.angle_y, 0));
     }
 
     private void GetKey()
     {
-        if(charaPos.angle_y > 360){
-            charaPos.angle_y = charaPos.angle_y - 360;
-        }
-        if(charaPos.angle_y < 0){
-            charaPos.angle_y = charaPos.angle_y + 360;
-        }
+        // if(charaPos.angle_y > 360){
+        //     charaPos.angle_y = charaPos.angle_y - 360;
+        // }
+        // if(charaPos.angle_y < 0){
+        //     charaPos.angle_y = charaPos.angle_y + 360;
+        // }
         if(Input.GetKey(KeyCode.LeftArrow)){
             charaPos.angle_y -= 2;
+            charaPos.x = 0;
+            charaPos.z = 0;
             charaPos.playerMove = PlayerMove.turn_left;
             before_move = PlayerMove.turn_left;
         }
         if(Input.GetKey(KeyCode.RightArrow)){
             charaPos.angle_y += 2;
+            charaPos.x = 0;
+            charaPos.z = 0;
             charaPos.playerMove = PlayerMove.turn_right;
             before_move = PlayerMove.turn_right;
         }
@@ -123,6 +128,7 @@ public class PlayerController : MonoBehaviour
             charaPos.x = transform.position.x;
             charaPos.y = transform.position.y;
             charaPos.z = transform.position.z;
+            charaPos.currentTime = DateTime.Now.TimeOfDay.TotalMilliseconds;
             Network_Login NetworkManager = GameObject.Find("NetworkManager").GetComponent<Network_Login>();
             NetworkManager.SendPacket2CsServer(charaPos);
         }
