@@ -29,11 +29,11 @@ public class PlayerController : MonoBehaviour
     private Vector3 moveDirection;
     public float speed = 3.0f;
     public enum PlayerMove{
-        stop,
-        turn_left,
-        turn_right,
-        moveFront,
-        moveBack
+        stop = 0,
+        turn_left = 1,
+        turn_right = 2,
+        moveFront = 3,
+        moveBack = 4
     };
     public PlayerMove before_move = PlayerMove.stop;
     public PlayerMove after_move = PlayerMove.stop;
@@ -71,9 +71,10 @@ public class PlayerController : MonoBehaviour
     {
         GetKey();
         CheckMove();
-        moveDirection = new Vector3(charaPos.x, charaPos.y, charaPos.z);
+        moveDirection = new Vector3(charaPos.x, 0, charaPos.z);
         transform.position += moveDirection * Time.deltaTime;
-        transform.rotation = Quaternion.Euler(new Vector3(0, charaPos.angle_y, 0));
+        //transform.rotation = Quaternion.Euler(new Vector3(0, charaPos.angle_y, 0) * Time.deltaTime);
+        transform.Rotate(new Vector3(0, charaPos.angle_y, 0) * Time.deltaTime);
     }
 
     private void GetKey()
@@ -85,29 +86,31 @@ public class PlayerController : MonoBehaviour
         //     charaPos.angle_y = charaPos.angle_y + 360;
         // }
         if(Input.GetKey(KeyCode.LeftArrow)){
-            charaPos.angle_y -= 2;
+            charaPos.angle_y = -90;
             charaPos.x = 0;
             charaPos.z = 0;
             charaPos.playerMove = PlayerMove.turn_left;
             before_move = PlayerMove.turn_left;
         }
         if(Input.GetKey(KeyCode.RightArrow)){
-            charaPos.angle_y += 2;
+            charaPos.angle_y = 90;
             charaPos.x = 0;
             charaPos.z = 0;
             charaPos.playerMove = PlayerMove.turn_right;
             before_move = PlayerMove.turn_right;
         }
         if(Input.GetKey(KeyCode.UpArrow)){
-            charaPos.x = speed * Mathf.Sin(charaPos.angle_y * Mathf.PI / 180);
-            charaPos.z = speed * Mathf.Cos(charaPos.angle_y * Mathf.PI / 180);
+            charaPos.x = speed * Mathf.Sin(transform.eulerAngles.y * Mathf.PI / 180);
+            charaPos.z = speed * Mathf.Cos(transform.eulerAngles.y * Mathf.PI / 180);
+            charaPos.angle_y = 0;
             PlayerState = PlayerState.Move;
             charaPos.playerMove = PlayerMove.moveFront;
             before_move = PlayerMove.moveFront;
         }
         if(Input.GetKey(KeyCode.DownArrow)){
-            charaPos.x = -speed * Mathf.Sin(charaPos.angle_y * Mathf.PI / 180);
-            charaPos.z = -speed * Mathf.Cos(charaPos.angle_y * Mathf.PI / 180);
+            charaPos.x = -speed * Mathf.Sin(transform.eulerAngles.y * Mathf.PI / 180);
+            charaPos.z = -speed * Mathf.Cos(transform.eulerAngles.y * Mathf.PI / 180);
+            charaPos.angle_y = 0;
             PlayerState = PlayerState.Move;
             charaPos.playerMove = PlayerMove.moveBack;
             before_move = PlayerMove.moveBack;
@@ -115,6 +118,7 @@ public class PlayerController : MonoBehaviour
         if(!Input.GetKey(KeyCode.LeftArrow) && !Input.GetKey(KeyCode.RightArrow) && !Input.GetKey(KeyCode.UpArrow) && !Input.GetKey(KeyCode.DownArrow)){
             charaPos.x = 0;
             charaPos.z = 0;
+            charaPos.angle_y = 0;
             PlayerState = PlayerState.Idle;
             charaPos.playerMove = PlayerMove.stop;
             before_move = PlayerMove.stop;
@@ -128,6 +132,7 @@ public class PlayerController : MonoBehaviour
             charaPos.x = transform.position.x;
             charaPos.y = transform.position.y;
             charaPos.z = transform.position.z;
+            //charaPos.angle_y = transform.rotation.y;
             charaPos.currentTime = DateTime.Now.TimeOfDay.TotalMilliseconds;
             Network_Login NetworkManager = GameObject.Find("NetworkManager").GetComponent<Network_Login>();
             NetworkManager.SendPacket2CsServer(charaPos);

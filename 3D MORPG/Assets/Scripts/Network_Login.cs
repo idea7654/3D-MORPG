@@ -41,11 +41,19 @@ public class Network_Login : MonoBehaviour
         public float angle_x;
         public float angle_y;
         public float angle_z;
+        public PlayerMove playerMove;
         public int map;
         public int exp;
         //double currentTime;
         public string message;
         public double currentTime;
+    };
+    public enum PlayerMove{
+        stop = 0,
+        turn_left = 1,
+        turn_right = 2,
+        moveFront = 3,
+        moveBack = 4
     };
     private double latency;
     public GameObject PlayerPrefab;
@@ -119,6 +127,9 @@ public class Network_Login : MonoBehaviour
                 case "PlayerMove":
                     MovePlayer(connectPlayer);
                     break;
+                case "OverLogin":
+                    Debug.Log("중복로그인입니다ㅠㅠ");
+                    break;
                 default:
                     break;
             }
@@ -131,6 +142,23 @@ public class Network_Login : MonoBehaviour
         //레이턴시 대강 6ms정도(솔플, 로컬기준)
         GameObject target = GameObject.Find(player.nickname);
         target.transform.position = new Vector3(player.x, 0, player.z);
+        //switch(target.playerMove)
+        //{
+        //    case PlayerMove.moveFront:
+        //        target.transform.position = new Vector3(player.x, 0, player.z) + new Vector3()
+        //}
+        DeadReckoning(player);
+    }
+
+    void DeadReckoning(Player player)
+    {
+        OtherPlayerController otherObject = GameObject.Find(player.nickname).GetComponent<OtherPlayerController>();
+        //otherObject.SetPlayerMove(player.playerMove);
+        // otherObject.playerMove = (int)player.playerMove;
+        if(otherObject)
+        {
+            otherObject.playerMove = (int)player.playerMove;
+        }
     }
 
     void ConnectNewPlayer(Player player)
@@ -144,7 +172,6 @@ public class Network_Login : MonoBehaviour
 
     void ConnectOtherPlayer(Player player)
     {
-        Debug.Log("일단 여기 오기는 함ㅋ");
         Vector3 position = new Vector3(player.x, player.y, player.z);
         Vector3 angle = new Vector3(player.angle_x, player.angle_y, player.angle_z);
         CreateOtherPlayer(player.nickname, position, angle);
@@ -186,12 +213,10 @@ public class Network_Login : MonoBehaviour
         obj.name = nickname;
         PlayerName = nickname;
         DontDestroyOnLoad(obj);
-        //obj.Id = id;
     }
     public void CreateOtherPlayer(string nickname, Vector3 position, Vector3 angle){
         var obj = Instantiate(PlayerPrefab2, position, Quaternion.Euler(angle));
         obj.name = nickname;
         DontDestroyOnLoad(obj);
-        //obj.Id = id;
     }
 }
