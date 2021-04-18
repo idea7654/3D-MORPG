@@ -48,6 +48,10 @@ public class Network_Login : MonoBehaviour
         public string message;
         public double currentTime;
     };
+    struct ConnectionPacket{
+            public string message;
+            public string nickname;
+        }
     public enum PlayerMove{
         stop = 0,
         turn_left = 1,
@@ -68,6 +72,8 @@ public class Network_Login : MonoBehaviour
     {
         serverOn();
         StartCoroutine(buffer_update());
+        
+        GameObject.Find("OverLogin").SetActive(false);
     }
 
     void serverOn(){
@@ -106,6 +112,18 @@ public class Network_Login : MonoBehaviour
         }
     }
 
+    IEnumerator ConnectPacket()
+    {
+        while(true)
+        {
+            ConnectionPacket packet = new ConnectionPacket();
+            packet.message = "connected";
+            packet.nickname = PlayerName;
+            SendPacket2CsServer(packet);
+            yield return new WaitForSeconds(.5f);
+        }
+    }
+
     void BufferSystem()
     {
         while(Buffer.Count != 0){ //큐의 크기가 0이 아니면 작동, 만약 while을 안하면 프레임마다 버퍼를 처리하는데
@@ -120,6 +138,7 @@ public class Network_Login : MonoBehaviour
             switch(connectPlayer.message){
                 case "Connect":
                     ConnectNewPlayer(connectPlayer);
+                    StartCoroutine(ConnectPacket());
                     break;
                 case "OtherPlayers":
                     ConnectOtherPlayer(connectPlayer);
@@ -128,7 +147,7 @@ public class Network_Login : MonoBehaviour
                     MovePlayer(connectPlayer);
                     break;
                 case "OverLogin":
-                    Debug.Log("중복로그인입니다ㅠㅠ");
+                    OverLogin();
                     break;
                 default:
                     break;
@@ -148,6 +167,11 @@ public class Network_Login : MonoBehaviour
         //        target.transform.position = new Vector3(player.x, 0, player.z) + new Vector3()
         //}
         DeadReckoning(player);
+    }
+
+    void OverLogin()
+    {
+        GameObject.Find("Canvas").transform.FindChild("OverLogin").gameObject.SetActive(true);
     }
 
     void DeadReckoning(Player player)
