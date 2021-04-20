@@ -11,7 +11,6 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Runtime.InteropServices;
 using System.IO;
-using System.Timers;
 
 namespace Cs_Server
 {
@@ -40,20 +39,20 @@ namespace Cs_Server
     
     public class Program
     {
+        public static List<Address> players;
         private static ConnectionMultiplexer connection = ConnectionMultiplexer.Connect(("127.0.0.1:6379,password=osm980811"));
         private const string SessionChannel = "Session"; // Can be anything we want.
         public static bool OverLogin = false;
-        private static System.Timers.Timer timer;
+        public static NetWork networkClass = new NetWork();//네트워크 클래스 사용할 객체 생성
+
         static void Main(string[] args)
         {
             NetWork useSocket = new NetWork(); //네트워크 클래스의 소켓을 사용하기 위함
-            List<Address> players = new List<Address>(); //서버에서 접속중인 유저들 정보를 담아두는 리스트
+            players = new List<Address>(); //서버에서 접속중인 유저들 정보를 담아두는 리스트
 
             Thread socketThread = new Thread(new ThreadStart(useSocket.Start)); //네트워크 클래스의 소켓설정하는 스레드(static함수로 한번실행 후 종료)
             socketThread.Start();
-            Thread BufferThread = new Thread(new ThreadStart(useSocket.buffer_update)); //네트워크 클래스에서 버퍼 받아오는 스레드(계속 켜져있는 스레드)
-            BufferThread.Start();
-            Thread CheckConnection = new Thread(() => ConnectCheck(players)); //유저 접속중을 판단하는 스레드.
+            Thread CheckConnection = new Thread(() => ConnectCheck()); //유저 접속중을 판단하는 스레드.
             CheckConnection.Start();
 
             var pubsub = connection.GetSubscriber(); //redis의 pub/sub설정
@@ -68,16 +67,53 @@ namespace Cs_Server
             SetInterval(action, timeout);
         }
 
-        private static void ConnectCheck(List<Address> players)
+        private static void ConnectCheck()
         {
             SetInterval(() => players.ForEach(ConnectionCount), TimeSpan.FromSeconds(1)); //1초마다 접속해있는 모든 유저의 connectCheck값 1씩 감소, 0이 되면 접속해제
         }
-        
 
         private static void ConnectionCount(Address address)
-        {
+        {;
             address.connectCheck--;
-            //연결끊김처리하면됨
+            if(address.connectCheck < 0)
+            {
+                var find = players.FirstOrDefault(p => p.nickname == address.nickname);
+                if(find != null)
+                {
+                    players.Remove(find);
+                    networkClass.setPlayers(ref players);
+                    Sql_LogOut(address.nickname);
+                    players.ForEach(i => LogoutPacketToClient(i, address));
+                    ConnectCheck();
+                }
+            }
+            //연결끊김처리
+        }
+
+        private static void LogoutPacketToClient(Address address, Address targetAddress)
+        {
+            JObject packet = new JObject();
+            packet.Add("message", "Logout");
+            packet.Add("nickname", targetAddress.nickname);
+            networkClass.SendPacket2Server(packet, address.address, address.port);
+        }
+
+        private static void Sql_LogOut(string nickname)
+        {
+            using (MySqlConnection connection = new MySqlConnection("Server=localhost;Port=3306;Database=MORPG;Uid=root;Pwd=osm980811"))
+            {
+                try
+                {
+                    connection.Open();
+                    MySqlCommand command = new MySqlCommand("UPDATE Player SET onLogin=false WHERE nickname='" + nickname + "'", connection);
+                    //로그아웃 시킬 유저를 DB에서 로그아웃
+                    command.ExecuteNonQuery();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+            }
         }
 
         private static void MessageAction(RedisValue message, ref List<Address> players)
@@ -89,7 +125,6 @@ namespace Cs_Server
         public static void AddPlayerInWorld(JObject userInfo, ref List<Address> players)
         {
             Address address = new Address(); //리스트에 넣을 Address객체 생성
-            NetWork networkClass = new NetWork(); //네트워크 클래스 사용할 객체 생성
             
             address.address = userInfo["address"].ToString();
             address.port = Int32.Parse(userInfo["port"].ToString());
@@ -108,14 +143,13 @@ namespace Cs_Server
             }
             else //중복로그인일경우
             {
-                Sql_LogOut(address.nickname, address.address, address.port, ref players);
+                Sql_LogOut_OverLogin(address.nickname, address.address, address.port);
             }
         }
 
-        private static void Sql_LogOut(string nickname, string address, int port, ref List<Address> players)
+        private static void Sql_LogOut_OverLogin(string nickname, string address, int port)
         {
             //중복로그인일경우에 실행됨
-            NetWork useSocket = new NetWork();
             using (MySqlConnection connection = new MySqlConnection("Server=localhost;Port=3306;Database=MORPG;Uid=root;Pwd=osm980811"))
             {
                 try
@@ -130,8 +164,13 @@ namespace Cs_Server
                         players.Remove(item); // 그리고 리스트에서 삭제
                     }
                     JObject message = new JObject();
-                    message.Add("message", "OverLogin"); 
-                    useSocket.SendPacket2Server(message, address, port); //클라에 중복로그인이었다는 메시지를 보냄
+                    message.Add("message", "OverLogin");
+                    message.Add("nickname", nickname);
+                    players.ForEach(i =>
+                    {
+                        networkClass.SendPacket2Server(message, i.address, i.port);
+                    });
+                    //networkClass.SendPacket2Server(message, address, port); //클라에 중복로그인이었다는 메시지를 보냄
                     OverLogin = false; //중복로그인 해제
                 }
                 catch (Exception ex)
@@ -168,7 +207,6 @@ namespace Cs_Server
         private static void SendOtherUsersPacket(Address address, string query)
         {
             //처음 접속한 유저를 모든 유저에게 현재 접속되어있는 모든 유저들의 데이터를 보냄
-            NetWork useSocket = new NetWork();
             using (MySqlConnection connection = new MySqlConnection("Server=localhost;Port=3306;Database=MORPG;Uid=root;Pwd=osm980811"))
             {
                 try
@@ -182,7 +220,7 @@ namespace Cs_Server
                     {
                         //Console.WriteLine(table);
                         JObject json = util.CreateJson("OtherPlayers", table);
-                        useSocket.SendPacket2Server(json, address.address, address.port);
+                        networkClass.SendPacket2Server(json, address.address, address.port);
                     }
                     table.Close();
                 }
@@ -221,6 +259,25 @@ namespace Cs_Server
             }
         }
 
+        public static void Sql_SaveUser(JObject player)
+        {
+            using (MySqlConnection connection = new MySqlConnection("Server=localhost;Port=3306;Database=MORPG;Uid=root;Pwd=osm980811"))
+            {
+                try
+                {
+                    connection.Open();
+                    float x = (float)player["x"];
+                    MySqlCommand command = new MySqlCommand("UPDATE Player SET x='" + x + "',y='" + player["y"] + "',z='" + player["z"] + "',angle_y='" + player["angle_y"]
+                        + "' WHERE nickname='"+ player["nickname"] + "'", connection);
+                    command.ExecuteNonQuery();
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+            }
+        }
+
         private static void Sql_Read(List<Address> players, Address address, string query)
         {
             //처음 접속한 유저의 정보를 접속되어있는 모든 플레이어에게 보냄
@@ -236,7 +293,6 @@ namespace Cs_Server
                     while (table.Read())
                     {
                         //소켓으로 데이터 전송
-                        NetWork useSocket = new NetWork();
 
                         players.ForEach(ConnectNewUser);
                         void ConnectNewUser(Address s)
@@ -245,14 +301,14 @@ namespace Cs_Server
                             {
                                 Util util = new Util();
                                 JObject packet = util.CreateJson("Connect", table); //Connect메시지로 보내고
-                                useSocket.SendPacket2Server(packet, s.address, s.port);
+                                networkClass.SendPacket2Server(packet, s.address, s.port);
                             }
                             else //서버에 접속중인 플레이어들 중 자신이 아니라면
                             {
                                 //otherjson.Add("message", "OtherPlayers");
                                 Util util = new Util();
                                 JObject packet = util.CreateJson("OtherPlayers", table); //OtherPlayers메시지로 보냄
-                                useSocket.SendPacket2Server(packet, s.address, s.port);
+                                networkClass.SendPacket2Server(packet, s.address, s.port);
                             }
                         }
                     }
@@ -274,12 +330,12 @@ namespace Cs_Server
         {
             var otherjson = new JObject();
             otherjson.Add("nickname", table["nickname"].ToString());
-            otherjson.Add("x", Int32.Parse(table["x"].ToString()));
-            otherjson.Add("y", Int32.Parse(table["y"].ToString()));
-            otherjson.Add("z", Int32.Parse(table["z"].ToString()));
-            otherjson.Add("angle_x", Int32.Parse(table["angle_x"].ToString()));
-            otherjson.Add("angle_y", Int32.Parse(table["angle_y"].ToString()));
-            otherjson.Add("angle_z", Int32.Parse(table["angle_z"].ToString()));
+            otherjson.Add("x", Single.Parse(table["x"].ToString()));
+            otherjson.Add("y", Single.Parse(table["y"].ToString()));
+            otherjson.Add("z", Single.Parse(table["z"].ToString()));
+            otherjson.Add("angle_x", Single.Parse(table["angle_x"].ToString()));
+            otherjson.Add("angle_y", Single.Parse(table["angle_y"].ToString()));
+            otherjson.Add("angle_z", Single.Parse(table["angle_z"].ToString()));
             otherjson.Add("exp", Int32.Parse(table["exp"].ToString()));
             otherjson.Add("map", Int32.Parse(table["map"].ToString()));
             otherjson.Add("message", message);
@@ -296,7 +352,7 @@ namespace Cs_Server
     } //서버에 접속중인 리스트 클래스
     public class NetWork
     {
-        byte[] recvByte = new byte[1024];
+        byte[] recvByte = new byte[512];
         string strIP = "127.0.0.1";
         int port = 8000;
         public static Socket sock;
@@ -305,8 +361,8 @@ namespace Cs_Server
         Queue<string> Buffer = new Queue<string>();
         object buffer_lock = new object(); //queue충돌 방지용 lock
         public Thread moveThread;
-        public Thread connectionThread;
         public static List<Address> players;
+        EndPoint bindPoint;
         //기본 소켓 구조
 
         public void Start()
@@ -314,9 +370,9 @@ namespace Cs_Server
             sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             ip = IPAddress.Parse(strIP);
             endPoint = new IPEndPoint(ip, port);
+            bindPoint = (EndPoint)endPoint;
             sock.Bind(endPoint);
-            //connectionThread = new Thread(() => CheckConnection());
-            //connectionThread.Start();
+            /*
             while (true)
             {
                 try
@@ -335,42 +391,86 @@ namespace Cs_Server
                 {
                     Console.WriteLine(ex);
                 }
-            }
+            } //기존의 동기방식
+            */
             //sock.Connect(endPoint);
+            sock.BeginReceiveFrom(recvByte, 0, recvByte.Length, SocketFlags.None, ref bindPoint, new AsyncCallback(RecvCallBack), recvByte);
+            try
+            {
+                while(true)
+                {
+
+                }
+            }
+            catch(SocketException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
 
-        public void buffer_update()
+        private void RecvCallBack(IAsyncResult result)
         {
-            while (true)
+            try
             {
-                while (Buffer.Count != 0)
+                int size = sock.EndReceiveFrom(result, ref bindPoint);
+
+                if(size > 0)
                 {
-                    try
-                    {
-                        string b = null;
-                        lock (buffer_lock)
-                        {
-                            b = Buffer.Dequeue();
-                        }
-                        JObject player = JObject.Parse(b);
-                        if(player["message"].ToString() == "connected")
-                        {
-                            //Console.WriteLine(player["nickname"].ToString());
-                            Address result = players.Find(x => x.nickname == player["nickname"].ToString());
-                            result.connectCheck = 5;
-                        }
-                        else
-                        {
-                            moveThread = new Thread(() => PlayerMove(player));
-                            moveThread.Start();
-                        }
-                    }
-                    catch(Exception ex)
-                    {
-                        Console.WriteLine(ex);
-                    }
-                    
+                    byte[] recvBuffer = new byte[512];
+                    recvBuffer = (byte[])result.AsyncState;
+
+                    //로직 처리
+                    string recvString = Encoding.UTF8.GetString(recvBuffer);
+                    recvString = recvString.Replace("\0", string.Empty);
+
+                    //lock (buffer_lock)
+                    //{ //큐 충돌방지
+                    //    Buffer.Enqueue(recvString); //큐에 버퍼 저장
+                    //}
+                    buffer_update(recvString);
+                    System.Array.Clear(recvByte, 0, recvByte.Length); //버퍼를 사용후 초기화
                 }
+                sock.BeginReceiveFrom(recvByte, 0, recvByte.Length, SocketFlags.None, ref bindPoint, new AsyncCallback(RecvCallBack), recvByte);
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        public void buffer_update(string recvString)
+        {
+            try
+            {
+                string b = recvString;
+                //lock (buffer_lock)
+                //{
+                    //b = Buffer.Dequeue();
+                //}
+                JObject player = JObject.Parse(b);
+                if(player["message"].ToString() == "connected")
+                {
+                    //Console.WriteLine(player["nickname"].ToString());
+                    Address result = players.Find(x => x.nickname == player["nickname"].ToString());
+                    result.connectCheck = 5;
+                    //검사하면서 유저위치 디비에 업데이트
+                    Program.Sql_SaveUser(player);
+                }else if(player["message"].ToString() == "Chatting")
+                {
+                    players.ForEach(i =>
+                    {
+                        SendPacket2Server(player, i.address, i.port);
+                    });
+                }
+                else
+                {
+                    moveThread = new Thread(() => PlayerMove(player));
+                    moveThread.Start();
+                }
+            }
+            catch(Exception ex)
+            {
+            Console.WriteLine(ex);
             }
         }
 
@@ -381,9 +481,7 @@ namespace Cs_Server
 
         public void PlayerMove(JObject player)
         {
-            //디비에 저장?
             //클라에 값 전달
-            //SendPacket2Server(player, )
             players.ForEach((address) => SendToAllClient(address, player));
             moveThread.Interrupt();
         }

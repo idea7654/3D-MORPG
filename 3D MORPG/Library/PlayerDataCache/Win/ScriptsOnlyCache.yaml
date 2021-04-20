@@ -1,7 +1,9 @@
 ScriptsOnlyBuild:
   usedScripts:
     Assembly-CSharp.dll:
+    - AlertToggle
     - CameraController
+    - Chatting
     - Login
     - Network_Login
     - OtherPlayerController
@@ -23,10 +25,15 @@ ScriptsOnlyBuild:
     - UnityEngine.EventSystems.StandaloneInputModule
     - UnityEngine.UI.Button
     - UnityEngine.UI.CanvasScaler
+    - UnityEngine.UI.ContentSizeFitter
     - UnityEngine.UI.GraphicRaycaster
     - UnityEngine.UI.Image
     - UnityEngine.UI.InputField
+    - UnityEngine.UI.Mask
+    - UnityEngine.UI.ScrollRect
+    - UnityEngine.UI.Scrollbar
     - UnityEngine.UI.Text
+    - UnityEngine.UI.VerticalLayoutGroup
   sceneClasses:
     Assets/Scenes/LoginScene.unity:
     - Class: 1
@@ -68,27 +75,29 @@ ScriptsOnlyBuild:
     - Class: 114
       Script: {instanceID: 1726}
     - Class: 114
-      Script: {instanceID: 2356}
+      Script: {instanceID: 1818}
     - Class: 114
-      Script: {instanceID: 2448}
+      Script: {instanceID: 2072}
     - Class: 114
-      Script: {instanceID: 2868}
+      Script: {instanceID: 2360}
     - Class: 114
-      Script: {instanceID: 3038}
+      Script: {instanceID: 2452}
     - Class: 114
-      Script: {instanceID: 3052}
+      Script: {instanceID: 2872}
     - Class: 114
-      Script: {instanceID: 3278}
+      Script: {instanceID: 3042}
     - Class: 114
-      Script: {instanceID: 3348}
+      Script: {instanceID: 3056}
     - Class: 114
-      Script: {instanceID: 3598}
+      Script: {instanceID: 3282}
     - Class: 114
-      Script: {instanceID: 3660}
+      Script: {instanceID: 3352}
     - Class: 114
-      Script: {instanceID: 3736}
+      Script: {instanceID: 3602}
     - Class: 114
-      Script: {instanceID: 16336}
+      Script: {instanceID: 3664}
+    - Class: 114
+      Script: {instanceID: 3740}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 128
@@ -151,10 +160,38 @@ ScriptsOnlyBuild:
     - Class: 108
       Script: {instanceID: 0}
     - Class: 114
-      Script: {instanceID: 2356}
+      Script: {instanceID: 1726}
     - Class: 114
-      Script: {instanceID: 3416}
+      Script: {instanceID: 1754}
+    - Class: 114
+      Script: {instanceID: 1918}
+    - Class: 114
+      Script: {instanceID: 2360}
+    - Class: 114
+      Script: {instanceID: 2452}
+    - Class: 114
+      Script: {instanceID: 2598}
+    - Class: 114
+      Script: {instanceID: 2790}
+    - Class: 114
+      Script: {instanceID: 2872}
+    - Class: 114
+      Script: {instanceID: 3056}
+    - Class: 114
+      Script: {instanceID: 3282}
+    - Class: 114
+      Script: {instanceID: 3352}
+    - Class: 114
+      Script: {instanceID: 3420}
+    - Class: 114
+      Script: {instanceID: 3602}
+    - Class: 114
+      Script: {instanceID: 3616}
+    - Class: 114
+      Script: {instanceID: 22274}
     - Class: 115
+      Script: {instanceID: 0}
+    - Class: 128
       Script: {instanceID: 0}
     - Class: 136
       Script: {instanceID: 0}
@@ -163,6 +200,14 @@ ScriptsOnlyBuild:
     - Class: 157
       Script: {instanceID: 0}
     - Class: 196
+      Script: {instanceID: 0}
+    - Class: 213
+      Script: {instanceID: 0}
+    - Class: 222
+      Script: {instanceID: 0}
+    - Class: 223
+      Script: {instanceID: 0}
+    - Class: 224
       Script: {instanceID: 0}
     - Class: 238
       Script: {instanceID: 0}
@@ -191,6 +236,12 @@ ScriptsOnlyBuild:
     assemblyName: Unity.TextMeshPro.dll
     namespaceName: TMPro
     className: TMP_InputField
+  - hash:
+      serializedVersion: 2
+      Hash: 8a10d1fc6029b3f51d0abc87582fa9fd
+    assemblyName: Assembly-CSharp.dll
+    namespaceName: 
+    className: AlertToggle
   - hash:
       serializedVersion: 2
       Hash: caa533b001ae39b864ba8425019e2268
@@ -269,6 +320,12 @@ ScriptsOnlyBuild:
     assemblyName: Unity.TextMeshPro.dll
     namespaceName: TMPro
     className: TMP_FontAsset
+  - hash:
+      serializedVersion: 2
+      Hash: 94340b3d9dd8d2d160652cec6b44fd31
+    assemblyName: Assembly-CSharp.dll
+    namespaceName: 
+    className: OtherPlayerController
   - hash:
       serializedVersion: 2
       Hash: 18c222bef9ae745ce69ddde9b74337ca
@@ -445,7 +502,7 @@ ScriptsOnlyBuild:
     className: AspectRatioFitter
   - hash:
       serializedVersion: 2
-      Hash: e151b13cf6b9e5b7235d06a7c5812053
+      Hash: 9b830168915f4825167fe1144c95a187
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: Network_Login
@@ -619,10 +676,10 @@ ScriptsOnlyBuild:
     className: TextContainer
   - hash:
       serializedVersion: 2
-      Hash: 94340b3d9dd8d2d160652cec6b44fd31
+      Hash: 56a48eaace5d1afe2625633bb61e7ec3
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
-    className: OtherPlayerController
+    className: Chatting
   platform: 5
   scenePathNames:
   - Assets/Scenes/LoginScene.unity

@@ -33,7 +33,11 @@ public class PlayerController : MonoBehaviour
         turn_left = 1,
         turn_right = 2,
         moveFront = 3,
-        moveBack = 4
+        moveBack = 4,
+        moveFrontLeft,
+        moveFrontRight,
+        moveBackLeft,
+        moveBackRight
     };
     public PlayerMove before_move = PlayerMove.stop;
     public PlayerMove after_move = PlayerMove.stop;
@@ -55,7 +59,8 @@ public class PlayerController : MonoBehaviour
         charaPos.y = transform.position.y;
         charaPos.z = transform.position.z;
         charaPos.angle_x = transform.rotation.x;
-        charaPos.angle_y = transform.rotation.y;
+        //charaPos.angle_y = transform.rotation.y;
+        charaPos.angle_y = transform.eulerAngles.y;
         charaPos.angle_z = transform.rotation.z;
     }
 
@@ -85,21 +90,57 @@ public class PlayerController : MonoBehaviour
         // if(charaPos.angle_y < 0){
         //     charaPos.angle_y = charaPos.angle_y + 360;
         // }
-        if(Input.GetKey(KeyCode.LeftArrow)){
+        if(Input.GetKey(KeyCode.LeftArrow) && Input.GetKey(KeyCode.UpArrow))
+        {
+            charaPos.angle_y = -90;
+            charaPos.x = speed * Mathf.Sin(transform.eulerAngles.y * Mathf.PI / 180);
+            charaPos.z = speed * Mathf.Cos(transform.eulerAngles.y * Mathf.PI / 180);
+            PlayerState = PlayerState.Move;
+            charaPos.playerMove = PlayerMove.moveFrontLeft;
+            before_move = PlayerMove.moveFrontLeft;
+        }
+        else if(Input.GetKey(KeyCode.RightArrow) && Input.GetKey(KeyCode.UpArrow))
+        {
+            charaPos.angle_y = 90;
+            charaPos.x = speed * Mathf.Sin(transform.eulerAngles.y * Mathf.PI / 180);
+            charaPos.z = speed * Mathf.Cos(transform.eulerAngles.y * Mathf.PI / 180);
+            PlayerState = PlayerState.Move;
+            charaPos.playerMove = PlayerMove.moveFrontRight;
+            before_move = PlayerMove.moveFrontRight;
+        }
+        else if(Input.GetKey(KeyCode.RightArrow) && Input.GetKey(KeyCode.DownArrow))
+        {
+            charaPos.angle_y = 90;
+            charaPos.x = -speed * Mathf.Sin(transform.eulerAngles.y * Mathf.PI / 180);
+            charaPos.z = -speed * Mathf.Cos(transform.eulerAngles.y * Mathf.PI / 180);
+            PlayerState = PlayerState.Move;
+            charaPos.playerMove = PlayerMove.moveBackRight;
+            before_move = PlayerMove.moveBackRight;
+        }
+        else if(Input.GetKey(KeyCode.LeftArrow) && Input.GetKey(KeyCode.DownArrow))
+        {
+            charaPos.angle_y = -90;
+            charaPos.x = -speed * Mathf.Sin(transform.eulerAngles.y * Mathf.PI / 180);
+            charaPos.z = -speed * Mathf.Cos(transform.eulerAngles.y * Mathf.PI / 180);
+            PlayerState = PlayerState.Move;
+            charaPos.playerMove = PlayerMove.moveBackLeft;
+            before_move = PlayerMove.moveBackLeft;
+        }
+        else if(Input.GetKey(KeyCode.LeftArrow)){
             charaPos.angle_y = -90;
             charaPos.x = 0;
             charaPos.z = 0;
             charaPos.playerMove = PlayerMove.turn_left;
             before_move = PlayerMove.turn_left;
         }
-        if(Input.GetKey(KeyCode.RightArrow)){
+        else if(Input.GetKey(KeyCode.RightArrow)){
             charaPos.angle_y = 90;
             charaPos.x = 0;
             charaPos.z = 0;
             charaPos.playerMove = PlayerMove.turn_right;
             before_move = PlayerMove.turn_right;
         }
-        if(Input.GetKey(KeyCode.UpArrow)){
+        else if(Input.GetKey(KeyCode.UpArrow)){
             charaPos.x = speed * Mathf.Sin(transform.eulerAngles.y * Mathf.PI / 180);
             charaPos.z = speed * Mathf.Cos(transform.eulerAngles.y * Mathf.PI / 180);
             charaPos.angle_y = 0;
@@ -107,7 +148,7 @@ public class PlayerController : MonoBehaviour
             charaPos.playerMove = PlayerMove.moveFront;
             before_move = PlayerMove.moveFront;
         }
-        if(Input.GetKey(KeyCode.DownArrow)){
+        else if(Input.GetKey(KeyCode.DownArrow)){
             charaPos.x = -speed * Mathf.Sin(transform.eulerAngles.y * Mathf.PI / 180);
             charaPos.z = -speed * Mathf.Cos(transform.eulerAngles.y * Mathf.PI / 180);
             charaPos.angle_y = 0;
@@ -115,7 +156,7 @@ public class PlayerController : MonoBehaviour
             charaPos.playerMove = PlayerMove.moveBack;
             before_move = PlayerMove.moveBack;
         }
-        if(!Input.GetKey(KeyCode.LeftArrow) && !Input.GetKey(KeyCode.RightArrow) && !Input.GetKey(KeyCode.UpArrow) && !Input.GetKey(KeyCode.DownArrow)){
+        else{    
             charaPos.x = 0;
             charaPos.z = 0;
             charaPos.angle_y = 0;
@@ -132,7 +173,8 @@ public class PlayerController : MonoBehaviour
             charaPos.x = transform.position.x;
             charaPos.y = transform.position.y;
             charaPos.z = transform.position.z;
-            //charaPos.angle_y = transform.rotation.y;
+            charaPos.angle_y = transform.eulerAngles.y;
+            //Debug.Log(transform.eulerAngles.y);
             charaPos.currentTime = DateTime.Now.TimeOfDay.TotalMilliseconds;
             Network_Login NetworkManager = GameObject.Find("NetworkManager").GetComponent<Network_Login>();
             NetworkManager.SendPacket2CsServer(charaPos);

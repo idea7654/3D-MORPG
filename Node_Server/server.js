@@ -52,9 +52,9 @@ udpServer.on("message", (message, remote) => {
             })
                 .then(OnLogin)
                 .catch(UserNotFound);
+            break;
     }
 });
-
 udpServer.bind(PORT, HOST);
 
 // sub.on("subscribe", (channel, count) => {

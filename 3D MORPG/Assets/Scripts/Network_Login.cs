@@ -28,7 +28,8 @@ public class Network_Login : MonoBehaviour
     IPEndPoint bindEP;
     IPEndPoint CsServerEP;
     object buffer_lock = new object(); //queue충돌 방지용 lock
-    public string PlayerName;
+    
+    public float speed = 3.0f;
     #endregion
 
     #region Variable
@@ -47,17 +48,21 @@ public class Network_Login : MonoBehaviour
         //double currentTime;
         public string message;
         public double currentTime;
+        public string chat;
     };
-    struct ConnectionPacket{
-            public string message;
-            public string nickname;
-        }
+    public class ConnectionPacket : Player{
+        //public string message;
+    }
     public enum PlayerMove{
         stop = 0,
         turn_left = 1,
         turn_right = 2,
         moveFront = 3,
-        moveBack = 4
+        moveBack = 4,
+        moveFrontLeft,
+        moveFrontRight,
+        moveBackLeft,
+        moveBackRight
     };
     private double latency;
     public GameObject PlayerPrefab;
@@ -65,6 +70,7 @@ public class Network_Login : MonoBehaviour
 
     #endregion
     // Start is called before the first frame update
+    public string PlayerName;
     void Awake() {
         DontDestroyOnLoad(gameObject);
     }
@@ -119,6 +125,11 @@ public class Network_Login : MonoBehaviour
             ConnectionPacket packet = new ConnectionPacket();
             packet.message = "connected";
             packet.nickname = PlayerName;
+            var player = GameObject.Find(PlayerName);
+            packet.x = player.transform.position.x;
+            packet.y = player.transform.position.y;
+            packet.z = player.transform.position.z;
+            packet.angle_y = player.transform.eulerAngles.y;
             SendPacket2CsServer(packet);
             yield return new WaitForSeconds(.5f);
         }
@@ -147,31 +158,61 @@ public class Network_Login : MonoBehaviour
                     MovePlayer(connectPlayer);
                     break;
                 case "OverLogin":
-                    OverLogin();
+                    OverLogin(connectPlayer);
+                    break;
+                case "Logout":
+                    Logout(connectPlayer);
+                    break;
+                case "Chatting":
+                    GameObject.Find("Canvas").GetComponent<Chatting>().AddChat(connectPlayer.nickname, connectPlayer.chat);
                     break;
                 default:
                     break;
             }
         }
     }
+    //1. 대각이동 만들기
+    //2. 데드 레커닝 적용하기.
 
     void MovePlayer(Player player)
     {
         //Debug.Log(DateTime.Now.TimeOfDay.TotalMilliseconds - player.currentTime);
         //레이턴시 대강 6ms정도(솔플, 로컬기준)
         GameObject target = GameObject.Find(player.nickname);
-        target.transform.position = new Vector3(player.x, 0, player.z);
-        //switch(target.playerMove)
-        //{
-        //    case PlayerMove.moveFront:
-        //        target.transform.position = new Vector3(player.x, 0, player.z) + new Vector3()
-        //}
+        //target.transform.position = new Vector3(player.x, 0, player.z);
+        if(player.playerMove == PlayerMove.stop)
+        {
+            target.transform.position = new Vector3(player.x, 0, player.z);
+            target.transform.rotation = Quaternion.Euler(new Vector3(0, player.angle_y, 0));
+        }else{
+            switchMove(player, target);
+        }
+        //target.transform.rotation = Quaternion.Euler(new Vector3(0, player.angle_y, 0));
         DeadReckoning(player);
     }
 
-    void OverLogin()
+    void switchMove(Player player, GameObject target)
     {
-        GameObject.Find("Canvas").transform.FindChild("OverLogin").gameObject.SetActive(true);
+        float x = Mathf.Cos(player.angle_y) * speed * Convert.ToSingle(latency) / 1000;
+        float z = Mathf.Sin(player.angle_y) * speed * Convert.ToSingle(latency) / 1000;
+        target.transform.position = new Vector3(player.x, 0, player.z) + new Vector3(x, 0, z);
+        target.transform.rotation = Quaternion.Euler(new Vector3(0, player.angle_y, 0));
+    }
+
+    void OverLogin(Player player)
+    {
+        if(player.nickname == PlayerName)
+        {
+            GameObject.Find("Canvas").transform.FindChild("OverLogin").gameObject.SetActive(true);
+        }
+        else{
+            Logout(player);
+        }
+    }
+
+    void Logout(Player player)
+    {
+        Destroy(GameObject.Find(player.nickname));
     }
 
     void DeadReckoning(Player player)
@@ -190,15 +231,16 @@ public class Network_Login : MonoBehaviour
         //씬전환, 데이터 남기기.
         SceneManager.LoadScene("SampleScene");
         Vector3 position = new Vector3(player.x, player.y, player.z);
-        Vector3 angle = new Vector3(player.angle_x, player.angle_y, player.angle_z);
-        CreatePlayer(player.nickname, position, angle);
+        //Vector3 angle = new Vector3(player.angle_x, player.angle_y, player.angle_z);
+        
+        CreatePlayer(player.nickname, position, player.angle_y);
     }
 
     void ConnectOtherPlayer(Player player)
     {
         Vector3 position = new Vector3(player.x, player.y, player.z);
-        Vector3 angle = new Vector3(player.angle_x, player.angle_y, player.angle_z);
-        CreateOtherPlayer(player.nickname, position, angle);
+        //Vector3 angle = new Vector3(player.angle_x, player.angle_y, player.angle_z);
+        CreateOtherPlayer(player.nickname, position, player.angle_y);
     }
 
     // Update is called once per frame
@@ -232,14 +274,16 @@ public class Network_Login : MonoBehaviour
         Player newPlayer = JsonUtility.FromJson<Player>(str);
         return newPlayer;
     }
-    public void CreatePlayer(string nickname, Vector3 position, Vector3 angle){
-        var obj = Instantiate(PlayerPrefab, position, Quaternion.Euler(angle));
+    public void CreatePlayer(string nickname, Vector3 position, float angle_y){
+        GameObject obj = Instantiate(PlayerPrefab, position, Quaternion.Euler(new Vector3(0, 0, 0)));
+        obj.transform.Rotate(new Vector3(0, angle_y, 0));
         obj.name = nickname;
         PlayerName = nickname;
         DontDestroyOnLoad(obj);
     }
-    public void CreateOtherPlayer(string nickname, Vector3 position, Vector3 angle){
-        var obj = Instantiate(PlayerPrefab2, position, Quaternion.Euler(angle));
+    public void CreateOtherPlayer(string nickname, Vector3 position, float angle_y){
+        GameObject obj = Instantiate(PlayerPrefab2, position, Quaternion.Euler(new Vector3(0, 0, 0)));
+        obj.transform.Rotate(new Vector3(0, angle_y, 0));
         obj.name = nickname;
         DontDestroyOnLoad(obj);
     }
