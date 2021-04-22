@@ -16,6 +16,7 @@ public class Network_Login : MonoBehaviour
     byte[] recvByte = new byte[512];
     Thread ServerCheck_thread;
     Queue<string> Buffer = new Queue<string>();
+    Queue<string> Buffer_Connection = new Queue<string>();
     string strIP = "127.0.0.1";
 
     int port = 9000;
@@ -30,6 +31,8 @@ public class Network_Login : MonoBehaviour
     object buffer_lock = new object(); //queue충돌 방지용 lock
     
     public float speed = 3.0f;
+    private bool ConnectionFlag = false;
+    private float nextTime = 0.0f;
     #endregion
 
     #region Variable
@@ -47,7 +50,7 @@ public class Network_Login : MonoBehaviour
         public int exp;
         //double currentTime;
         public string message;
-        public double currentTime;
+        public long currentTime;
         public string chat;
     };
     public class ConnectionPacket : Player{
@@ -64,7 +67,7 @@ public class Network_Login : MonoBehaviour
         moveBackLeft,
         moveBackRight
     };
-    private double latency;
+    private long latency;
     public GameObject PlayerPrefab;
     public GameObject PlayerPrefab2;
 
@@ -113,8 +116,8 @@ public class Network_Login : MonoBehaviour
     {
         while(true)
         {
-            yield return null; //코루틴에서 반복문 쓸수잇게해줌
             BufferSystem();
+            yield return null; //코루틴에서 반복문 쓸수잇게해줌
         }
     }
 
@@ -131,7 +134,7 @@ public class Network_Login : MonoBehaviour
             packet.z = player.transform.position.z;
             packet.angle_y = player.transform.eulerAngles.y;
             SendPacket2CsServer(packet);
-            yield return new WaitForSeconds(.5f);
+            yield return new WaitForSecondsRealtime(.5f);
         }
     }
 
@@ -146,10 +149,12 @@ public class Network_Login : MonoBehaviour
             }
             //Debug.Log(b); //버퍼를 사용
             Player connectPlayer = StringToObj(b);
+            //Debug.Log(DateTime.Now.TimeOfDay.TotalMilliseconds - connectPlayer.currentTime);
             switch(connectPlayer.message){
                 case "Connect":
                     ConnectNewPlayer(connectPlayer);
-                    StartCoroutine(ConnectPacket());
+                    //StartCoroutine(ConnectPacket());
+                    ConnectionFlag = true;
                     break;
                 case "OtherPlayers":
                     ConnectOtherPlayer(connectPlayer);
@@ -176,8 +181,9 @@ public class Network_Login : MonoBehaviour
 
     void MovePlayer(Player player)
     {
-        //Debug.Log(DateTime.Now.TimeOfDay.TotalMilliseconds - player.currentTime);
+        latency = DateTimeOffset.Now.ToUnixTimeMilliseconds() - player.currentTime;
         //레이턴시 대강 6ms정도(솔플, 로컬기준)
+        //Debug.Log(latency);
         GameObject target = GameObject.Find(player.nickname);
         //target.transform.position = new Vector3(player.x, 0, player.z);
         if(player.playerMove == PlayerMove.stop)
@@ -193,8 +199,10 @@ public class Network_Login : MonoBehaviour
 
     void switchMove(Player player, GameObject target)
     {
-        float x = Mathf.Cos(player.angle_y) * speed * Convert.ToSingle(latency) / 1000;
-        float z = Mathf.Sin(player.angle_y) * speed * Convert.ToSingle(latency) / 1000;
+        float x = Mathf.Cos(player.angle_y * Mathf.PI / 180) * speed * Convert.ToSingle(latency) / 1000 * Time.deltaTime;
+        float z = Mathf.Sin(player.angle_y * Mathf.PI / 180) * speed * Convert.ToSingle(latency) / 1000 * Time.deltaTime;
+        Debug.Log(x);
+        Debug.Log(z);
         target.transform.position = new Vector3(player.x, 0, player.z) + new Vector3(x, 0, z);
         target.transform.rotation = Quaternion.Euler(new Vector3(0, player.angle_y, 0));
     }
@@ -246,7 +254,21 @@ public class Network_Login : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if(ConnectionFlag)
+        {
+            if(Time.time > nextTime){
+                nextTime = Time.time + 3.0f;
+                ConnectionPacket packet = new ConnectionPacket();
+                packet.message = "connected";
+                packet.nickname = PlayerName;
+                var player = GameObject.Find(PlayerName);
+                packet.x = player.transform.position.x;
+                packet.y = player.transform.position.y;
+                packet.z = player.transform.position.z;
+                packet.angle_y = player.transform.eulerAngles.y;
+                SendPacket2CsServer(packet);
+            }
+        }
     }
 
     public void SendPacket2Server(object obj)
@@ -259,7 +281,8 @@ public class Network_Login : MonoBehaviour
     public void SendPacket2CsServer(object obj)
     {
         byte[] userByte = ObjToByte(obj);
-        sock.SendTo(userByte, CsServerEP);
+        sock.SendTo(userByte, userByte.Length, SocketFlags.None, CsServerEP);
+        //Debug.Log(DateTimeOffset.Now.ToUnixTimeMilliseconds());
     }
 
     private byte[] ObjToByte(object obj)

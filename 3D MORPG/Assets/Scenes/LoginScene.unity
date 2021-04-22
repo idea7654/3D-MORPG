@@ -133,6 +133,7 @@ GameObject:
   m_Component:
   - component: {fileID: 129355936}
   - component: {fileID: 129355937}
+  - component: {fileID: 129355938}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -166,9 +167,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b9c2e21804a86e4e8119c79eb364931, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  PlayerName: 
+  speed: 3
   PlayerPrefab: {fileID: 2052716251097246508, guid: 4a6eb057221099d4e893485f37176a21, type: 3}
   PlayerPrefab2: {fileID: 6573083590682111246, guid: 8da768836b87bd34b9367ed172f80564, type: 3}
+  PlayerName: 
+--- !u!114 &129355938
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 129355935}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9c97db0f0afd9341bd60666aaac9c96, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &181160285
 GameObject:
   m_ObjectHideFlags: 0
@@ -492,9 +506,9 @@ RectTransform:
   m_Father: {fileID: 1780855257}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 470, y: 121}
+  m_AnchorMin: {x: 1, y: 0.5}
+  m_AnchorMax: {x: 1, y: 0.5}
+  m_AnchoredPosition: {x: -30, y: 88.362}
   m_SizeDelta: {x: 60, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &602638426
@@ -786,7 +800,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: -0.000061035, y: -32}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &850323412
 MonoBehaviour:
@@ -1319,8 +1333,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1000, y: 300}
+  m_AnchoredPosition: {x: 0.000098705, y: 0.0001}
+  m_SizeDelta: {x: 800, y: 236.7242}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1780855258
 MonoBehaviour:
@@ -1723,7 +1737,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 800, y: 600}

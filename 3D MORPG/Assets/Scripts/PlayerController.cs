@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using System;
+using System.Threading.Tasks;
 public enum PlayerState { Idle = 0, Move }
+public enum PlayerStateAttack {None = 0, Attack}
 
 public class PlayerController : MonoBehaviour
 {
@@ -13,6 +15,7 @@ public class PlayerController : MonoBehaviour
     public Animator Animator {private set; get;}
     public NavMeshAgent NavMeshAgent {private set; get;}
     public PlayerState PlayerState {set; get;}
+    public PlayerStateAttack PlayerStateAttack {set; get;}
     struct CharacterPosition{
         public float x;
         public float y;
@@ -20,7 +23,7 @@ public class PlayerController : MonoBehaviour
         public float angle_x;
         public float angle_y;
         public float angle_z;
-        public double currentTime;
+        public long currentTime;
         public PlayerMove playerMove;
         public string message;
         public string nickname;
@@ -41,6 +44,8 @@ public class PlayerController : MonoBehaviour
     };
     public PlayerMove before_move = PlayerMove.stop;
     public PlayerMove after_move = PlayerMove.stop;
+    private Network_Login NetworkManager;
+    private long Timer;
     #endregion
 
     private void Awake(){
@@ -48,6 +53,7 @@ public class PlayerController : MonoBehaviour
         //NavMeshAgent = GetComponent<NavMeshAgent>();
 
         PlayerState = PlayerState.Idle;
+        PlayerStateAttack = PlayerStateAttack.None;
     }
 
     // Start is called before the first frame update
@@ -58,10 +64,12 @@ public class PlayerController : MonoBehaviour
         charaPos.x = transform.position.x;
         charaPos.y = transform.position.y;
         charaPos.z = transform.position.z;
-        charaPos.angle_x = transform.rotation.x;
+        charaPos.angle_x = transform.eulerAngles.x;
         //charaPos.angle_y = transform.rotation.y;
         charaPos.angle_y = transform.eulerAngles.y;
-        charaPos.angle_z = transform.rotation.z;
+        charaPos.angle_z = transform.eulerAngles.z;
+        NetworkManager = GameObject.Find("NetworkManager").GetComponent<Network_Login>();
+        StartCoroutine(CheckMove());
     }
 
     // Update is called once per frame
@@ -75,7 +83,6 @@ public class PlayerController : MonoBehaviour
     private void MoveCharacter()
     {
         GetKey();
-        CheckMove();
         moveDirection = new Vector3(charaPos.x, 0, charaPos.z);
         transform.position += moveDirection * Time.deltaTime;
         //transform.rotation = Quaternion.Euler(new Vector3(0, charaPos.angle_y, 0) * Time.deltaTime);
@@ -164,22 +171,40 @@ public class PlayerController : MonoBehaviour
             charaPos.playerMove = PlayerMove.stop;
             before_move = PlayerMove.stop;
         }
+
+        if(Input.GetKeyDown(KeyCode.A))
+        {
+            if(DateTimeOffset.Now.ToUnixTimeMilliseconds() - Timer > 1000){
+                PlayerStateAttack = PlayerStateAttack.Attack;
+                Invoke("Change2Idle", 0.94f);
+                Timer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            }
+        }
     }
 
-    private void CheckMove()
+    void Change2Idle()
     {
-        if(before_move != after_move)
+        PlayerStateAttack = PlayerStateAttack.None;
+    }
+
+    IEnumerator CheckMove()
+    {
+        while(true)
         {
-            charaPos.x = transform.position.x;
-            charaPos.y = transform.position.y;
-            charaPos.z = transform.position.z;
-            charaPos.angle_y = transform.eulerAngles.y;
-            //Debug.Log(transform.eulerAngles.y);
-            charaPos.currentTime = DateTime.Now.TimeOfDay.TotalMilliseconds;
-            Network_Login NetworkManager = GameObject.Find("NetworkManager").GetComponent<Network_Login>();
-            NetworkManager.SendPacket2CsServer(charaPos);
+            if(before_move != after_move)
+            {
+                charaPos.message = "PlayerMove";
+                charaPos.x = transform.position.x;
+                charaPos.y = transform.position.y;
+                charaPos.z = transform.position.z;
+                charaPos.angle_y = transform.eulerAngles.y;
+                charaPos.currentTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                //Debug.Log(DateTimeOffset.Now.ToUnixTimeMilliseconds());
+                NetworkManager.SendPacket2CsServer(charaPos);
+            }
+            after_move = before_move;
+            yield return null;
         }
-        after_move = before_move;
     }
 
     private void SimpleFSM()
@@ -205,6 +230,15 @@ public class PlayerController : MonoBehaviour
                 //     NavMeshAgent.ResetPath();
                 // }
                 Animator.SetFloat("movementSpeed", 1.0f);
+                break;
+        }
+        switch(PlayerStateAttack)
+        {
+            case PlayerStateAttack.Attack:
+                Animator.SetFloat("attackSpeed", 1.1f);
+                break;
+            case PlayerStateAttack.None:
+                Animator.SetFloat("attackSpeed", 0.0f);
                 break;
         }
     }

@@ -434,7 +434,7 @@ namespace Cs_Server
             }
             catch(Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex);
             }
         }
 
@@ -470,7 +470,7 @@ namespace Cs_Server
             }
             catch(Exception ex)
             {
-            Console.WriteLine(ex);
+                Console.WriteLine(ex);
             }
         }
 
@@ -482,6 +482,7 @@ namespace Cs_Server
         public void PlayerMove(JObject player)
         {
             //클라에 값 전달
+            double playertime = Single.Parse(player["currentTime"].ToString());
             players.ForEach((address) => SendToAllClient(address, player));
             moveThread.Interrupt();
         }
