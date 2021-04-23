@@ -371,6 +371,10 @@ namespace Cs_Server
             ip = IPAddress.Parse(strIP);
             endPoint = new IPEndPoint(ip, port);
             bindPoint = (EndPoint)endPoint;
+            var sioUdpConnectionReset = -1744830452;
+            var inValue = new byte[] { 0 };
+            var outValue = new byte[] { 0 };
+            sock.IOControl(sioUdpConnectionReset, inValue, outValue);
             sock.Bind(endPoint);
             /*
             while (true)
@@ -482,7 +486,7 @@ namespace Cs_Server
         public void PlayerMove(JObject player)
         {
             //클라에 값 전달
-            double playertime = Single.Parse(player["currentTime"].ToString());
+            //double playertime = Single.Parse(player["currentTime"].ToString());
             players.ForEach((address) => SendToAllClient(address, player));
             moveThread.Interrupt();
         }

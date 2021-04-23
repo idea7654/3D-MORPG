@@ -8,8 +8,10 @@ public class OtherPlayerController : MonoBehaviour
     [SerializeField]
     public Animator Animator {private set; get;}
     public PlayerState PlayerState {set; get;}
+    public PlayerStateAttack PlayerStateAttack {set; get;}
 
     public int playerMove;
+    public int playerAction;
     private int speed = 3;
     float xSpeed;
     float zSpeed;
@@ -23,6 +25,7 @@ public class OtherPlayerController : MonoBehaviour
     void Start()
     {
         playerMove = 0;
+        playerAction = 0;
         yAngle = transform.rotation.y;
     }
 
@@ -98,6 +101,13 @@ public class OtherPlayerController : MonoBehaviour
             yAngle = 90;
             PlayerState = PlayerState.Move;
         }
+        
+        if(playerAction == 0){
+            PlayerStateAttack = PlayerStateAttack.None;
+        }
+        if(playerAction == 1){
+            PlayerStateAttack = PlayerStateAttack.Attack;
+        }
 
         transform.position += new Vector3(xSpeed, 0, zSpeed) * Time.deltaTime;
         //transform.rotation += Quaternion.Euler(new Vector3(0, yAngle, 0) * Time.deltaTime);
@@ -127,6 +137,15 @@ public class OtherPlayerController : MonoBehaviour
                 //     NavMeshAgent.ResetPath();
                 // }
                 Animator.SetFloat("movementSpeed", 1.0f);
+                break;
+        }
+        switch(PlayerStateAttack)
+        {
+            case PlayerStateAttack.Attack:
+                Animator.SetFloat("attackSpeed", 1.1f);
+                break;
+            case PlayerStateAttack.None:
+                Animator.SetFloat("attackSpeed", 0.0f);
                 break;
         }
     }

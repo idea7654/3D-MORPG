@@ -25,18 +25,31 @@ public class EnemyFSM : MonoBehaviour
 
     float attackDelay = 2f;
     float attackTimer = 0f;
+    public Network_Login network;
+    public int StateA;
+    public PlayerController playerController;
+    public float PlayerAttackTime = 0f;
+    public struct EnemyInfo{
+        public int hp;
+    }
+    public EnemyInfo enemyInfo;
     void Start()
     {
         myAni = GetComponent<EnemyAni>();
         ChangeState(State.Idle, EnemyAni.IDLE);
 
-        Network_Login network = GameObject.Find("NetworkManager").GetComponent<Network_Login>();
+        network = GameObject.Find("NetworkManager").GetComponent<Network_Login>();
         string playerName = network.PlayerName;
         player = GameObject.Find(playerName).transform;
+        playerController = GameObject.Find(playerName).GetComponent<PlayerController>();
+        StateA = (int)playerController.PlayerStateAttack;
+        enemyInfo = new EnemyInfo();
+        enemyInfo.hp = 3;
     }
 
     void UpdateState()
     {
+        StateA = (int)playerController.PlayerStateAttack;
         switch(currentState)
         {
             case State.Idle:
@@ -54,6 +67,23 @@ public class EnemyFSM : MonoBehaviour
             case State.NoState:
                 NoState();
                 break;
+        }
+    }
+
+    void OnTriggerStay(Collider col)
+    {
+        if(StateA == 1)
+        {
+          if(PlayerAttackTime > 2f)
+          {
+              enemyInfo.hp--;
+              if(enemyInfo.hp < 0){
+                  Destroy(gameObject);
+                  //패킷..
+              }
+              PlayerAttackTime = 0f;
+          }
+          PlayerAttackTime += Time.deltaTime;
         }
     }
 

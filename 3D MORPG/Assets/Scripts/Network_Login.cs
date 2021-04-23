@@ -52,6 +52,7 @@ public class Network_Login : MonoBehaviour
         public string message;
         public long currentTime;
         public string chat;
+        public PlayerStateAttack playerStateAttack;
     };
     public class ConnectionPacket : Player{
         //public string message;
@@ -162,6 +163,9 @@ public class Network_Login : MonoBehaviour
                 case "PlayerMove":
                     MovePlayer(connectPlayer);
                     break;
+                case "PlayerAction":
+                    ActionPlayer(connectPlayer);
+                    break;
                 case "OverLogin":
                     OverLogin(connectPlayer);
                     break;
@@ -201,10 +205,18 @@ public class Network_Login : MonoBehaviour
     {
         float x = Mathf.Cos(player.angle_y * Mathf.PI / 180) * speed * Convert.ToSingle(latency) / 1000 * Time.deltaTime;
         float z = Mathf.Sin(player.angle_y * Mathf.PI / 180) * speed * Convert.ToSingle(latency) / 1000 * Time.deltaTime;
-        Debug.Log(x);
-        Debug.Log(z);
         target.transform.position = new Vector3(player.x, 0, player.z) + new Vector3(x, 0, z);
         target.transform.rotation = Quaternion.Euler(new Vector3(0, player.angle_y, 0));
+    }
+
+    void ActionPlayer(Player player)
+    {
+        Debug.Log(player.playerStateAttack);
+        OtherPlayerController otherObject = GameObject.Find(player.nickname).GetComponent<OtherPlayerController>();
+        if(otherObject)
+        {
+            otherObject.playerAction = (int)player.playerStateAttack;
+        }
     }
 
     void OverLogin(Player player)

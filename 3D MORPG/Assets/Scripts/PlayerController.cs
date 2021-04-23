@@ -27,6 +27,7 @@ public class PlayerController : MonoBehaviour
         public PlayerMove playerMove;
         public string message;
         public string nickname;
+        public PlayerStateAttack playerStateAttack;
     }
     CharacterPosition charaPos;
     private Vector3 moveDirection;
@@ -44,6 +45,8 @@ public class PlayerController : MonoBehaviour
     };
     public PlayerMove before_move = PlayerMove.stop;
     public PlayerMove after_move = PlayerMove.stop;
+    public PlayerStateAttack before_action = PlayerStateAttack.None;
+    public PlayerStateAttack after_action = PlayerStateAttack.None;
     private Network_Login NetworkManager;
     private long Timer;
     #endregion
@@ -176,6 +179,7 @@ public class PlayerController : MonoBehaviour
         {
             if(DateTimeOffset.Now.ToUnixTimeMilliseconds() - Timer > 1000){
                 PlayerStateAttack = PlayerStateAttack.Attack;
+                before_action = PlayerStateAttack.Attack;
                 Invoke("Change2Idle", 0.94f);
                 Timer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             }
@@ -185,6 +189,7 @@ public class PlayerController : MonoBehaviour
     void Change2Idle()
     {
         PlayerStateAttack = PlayerStateAttack.None;
+        before_action = PlayerStateAttack.None;
     }
 
     IEnumerator CheckMove()
@@ -202,7 +207,15 @@ public class PlayerController : MonoBehaviour
                 //Debug.Log(DateTimeOffset.Now.ToUnixTimeMilliseconds());
                 NetworkManager.SendPacket2CsServer(charaPos);
             }
+
+            if(before_action != after_action)
+            {
+                charaPos.message = "PlayerAction";
+                charaPos.playerStateAttack = PlayerStateAttack;
+                NetworkManager.SendPacket2CsServer(charaPos);
+            }
             after_move = before_move;
+            after_action = before_action;
             yield return null;
         }
     }
