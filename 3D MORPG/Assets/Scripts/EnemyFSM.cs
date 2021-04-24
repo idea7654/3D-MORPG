@@ -30,7 +30,13 @@ public class EnemyFSM : MonoBehaviour
     public PlayerController playerController;
     public float PlayerAttackTime = 0f;
     public struct EnemyInfo{
-        public int hp;
+        public float x;
+        public float z;
+        public float angle_y;
+        public int id;
+        public float damage;
+        public State state;
+        public string message;
     }
     public EnemyInfo enemyInfo;
     void Start()
@@ -44,7 +50,11 @@ public class EnemyFSM : MonoBehaviour
         playerController = GameObject.Find(playerName).GetComponent<PlayerController>();
         StateA = (int)playerController.PlayerStateAttack;
         enemyInfo = new EnemyInfo();
-        enemyInfo.hp = 3;
+        //enemyInfo.hp = 3;
+        enemyInfo.x = transform.position.x;
+        enemyInfo.z = transform.position.z;
+        enemyInfo.angle_y = transform.eulerAngles.y;
+        enemyInfo.message = "EnemyAction";
     }
 
     void UpdateState()
@@ -76,12 +86,13 @@ public class EnemyFSM : MonoBehaviour
         {
           if(PlayerAttackTime > 2f)
           {
-              enemyInfo.hp--;
-              if(enemyInfo.hp < 0){
-                  Destroy(gameObject);
-                  //패킷..
-              }
-              PlayerAttackTime = 0f;
+            //   enemyInfo.hp--;
+            //   if(enemyInfo.hp < 0){
+            //       Destroy(gameObject);
+            //       //패킷..
+            //   }
+            //피격판정 패킷
+            PlayerAttackTime = 0f;
           }
           PlayerAttackTime += Time.deltaTime;
         }
@@ -92,6 +103,9 @@ public class EnemyFSM : MonoBehaviour
         if(currentState == newState)
         {
             return;
+        }else{
+            enemyInfo.state = newState;
+            network.SendPacket2CsServer(enemyInfo);
         }
 
         currentState = newState;
@@ -170,3 +184,4 @@ public class EnemyFSM : MonoBehaviour
         UpdateState();
     }
 }
+

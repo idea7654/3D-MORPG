@@ -20,7 +20,6 @@ public class Network_Login : MonoBehaviour
     string strIP = "127.0.0.1";
 
     int port = 9000;
-    int bindPort = 8400;
     Socket sock;
     IPAddress ip;
     IPEndPoint endPoint;
@@ -31,12 +30,15 @@ public class Network_Login : MonoBehaviour
     object buffer_lock = new object(); //queue충돌 방지용 lock
     
     public float speed = 3.0f;
-    private bool ConnectionFlag = false;
-    private float nextTime = 0.0f;
+    //private bool ConnectionFlag = false;
     #endregion
 
     #region Variable
-    public class Player
+    public class Enemy{
+        public string id;
+        public float damage;
+    }
+    public class Player : Enemy
     {
         public string nickname;
         public float x;
@@ -71,6 +73,7 @@ public class Network_Login : MonoBehaviour
     private long latency;
     public GameObject PlayerPrefab;
     public GameObject PlayerPrefab2;
+    public GameObject EnemyPrefab;
 
     #endregion
     // Start is called before the first frame update
@@ -122,10 +125,10 @@ public class Network_Login : MonoBehaviour
         }
     }
 
-    IEnumerator ConnectPacket()
+    void ConnectPacket()
     {
-        while(true)
-        {
+        //while(true)
+        //{
             ConnectionPacket packet = new ConnectionPacket();
             packet.message = "connected";
             packet.nickname = PlayerName;
@@ -135,8 +138,8 @@ public class Network_Login : MonoBehaviour
             packet.z = player.transform.position.z;
             packet.angle_y = player.transform.eulerAngles.y;
             SendPacket2CsServer(packet);
-            yield return new WaitForSecondsRealtime(.5f);
-        }
+            //yield return new WaitForSecondsRealtime(.5f);
+        //}
     }
 
     void BufferSystem()
@@ -155,7 +158,8 @@ public class Network_Login : MonoBehaviour
                 case "Connect":
                     ConnectNewPlayer(connectPlayer);
                     //StartCoroutine(ConnectPacket());
-                    ConnectionFlag = true;
+                    InvokeRepeating("ConnectPacket", 1f, 1f);
+                    //ConnectionFlag = true;
                     break;
                 case "OtherPlayers":
                     ConnectOtherPlayer(connectPlayer);
@@ -175,6 +179,9 @@ public class Network_Login : MonoBehaviour
                 case "Chatting":
                     GameObject.Find("Canvas").GetComponent<Chatting>().AddChat(connectPlayer.nickname, connectPlayer.chat);
                     break;
+                case "Respawn":
+                    EnemyRespawn(connectPlayer);
+                    break;
                 default:
                     break;
             }
@@ -192,7 +199,7 @@ public class Network_Login : MonoBehaviour
         //target.transform.position = new Vector3(player.x, 0, player.z);
         if(player.playerMove == PlayerMove.stop)
         {
-            target.transform.position = new Vector3(player.x, 0, player.z);
+            target.transform.position = new Vector3(player.x, player.y, player.z);
             target.transform.rotation = Quaternion.Euler(new Vector3(0, player.angle_y, 0));
         }else{
             switchMove(player, target);
@@ -201,11 +208,22 @@ public class Network_Login : MonoBehaviour
         DeadReckoning(player);
     }
 
+    void EnemyRespawn(Player player)
+    {
+        GameObject obj = Instantiate(EnemyPrefab, new Vector3(player.x, player.y, player.z), Quaternion.Euler(new Vector3(0, 0, 0)));
+        EnemyFSM enemyInfo = obj.GetComponent<EnemyFSM>();
+        enemyInfo.enemyInfo.id = Convert.ToInt32(player.id);
+        enemyInfo.enemyInfo.damage = player.damage;
+        obj.transform.Rotate(new Vector3(0, player.angle_y, 0));
+        obj.name = player.id;
+        DontDestroyOnLoad(obj);
+    }
+
     void switchMove(Player player, GameObject target)
     {
         float x = Mathf.Cos(player.angle_y * Mathf.PI / 180) * speed * Convert.ToSingle(latency) / 1000 * Time.deltaTime;
         float z = Mathf.Sin(player.angle_y * Mathf.PI / 180) * speed * Convert.ToSingle(latency) / 1000 * Time.deltaTime;
-        target.transform.position = new Vector3(player.x, 0, player.z) + new Vector3(x, 0, z);
+        target.transform.position = new Vector3(player.x, player.y, player.z) + new Vector3(x, 0, z);
         target.transform.rotation = Quaternion.Euler(new Vector3(0, player.angle_y, 0));
     }
 
@@ -252,7 +270,6 @@ public class Network_Login : MonoBehaviour
         SceneManager.LoadScene("SampleScene");
         Vector3 position = new Vector3(player.x, player.y, player.z);
         //Vector3 angle = new Vector3(player.angle_x, player.angle_y, player.angle_z);
-        
         CreatePlayer(player.nickname, position, player.angle_y);
     }
 
@@ -261,26 +278,27 @@ public class Network_Login : MonoBehaviour
         Vector3 position = new Vector3(player.x, player.y, player.z);
         //Vector3 angle = new Vector3(player.angle_x, player.angle_y, player.angle_z);
         CreateOtherPlayer(player.nickname, position, player.angle_y);
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        if(ConnectionFlag)
-        {
-            if(Time.time > nextTime){
-                nextTime = Time.time + 3.0f;
-                ConnectionPacket packet = new ConnectionPacket();
-                packet.message = "connected";
-                packet.nickname = PlayerName;
-                var player = GameObject.Find(PlayerName);
-                packet.x = player.transform.position.x;
-                packet.y = player.transform.position.y;
-                packet.z = player.transform.position.z;
-                packet.angle_y = player.transform.eulerAngles.y;
-                SendPacket2CsServer(packet);
-            }
-        }
+        // if(ConnectionFlag)
+        // {
+        //     if(Time.time > nextTime){
+        //         nextTime = Time.time + 3.0f;
+        //         ConnectionPacket packet = new ConnectionPacket();
+        //         packet.message = "connected";
+        //         packet.nickname = PlayerName;
+        //         var player = GameObject.Find(PlayerName);
+        //         packet.x = player.transform.position.x;
+        //         //packet.y = player.transform.position.y;
+        //         packet.z = player.transform.position.z;
+        //         packet.angle_y = player.transform.eulerAngles.y;
+        //         SendPacket2CsServer(packet);
+        //     }
+        // }
     }
 
     public void SendPacket2Server(object obj)

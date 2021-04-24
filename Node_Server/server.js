@@ -30,10 +30,6 @@ udpServer.on("message", (message, remote) => {
         case "loginRequest":
             function OnLogin(user) {
                 if (user) {
-                    //redis publish
-                    // sub.on("subscribe", (channel, count) => {
-                    //     pub.publish("Session", "첫 번째 메시지");
-                    // });
                     const userInfo = {
                         nickname: user.nickname,
                         address: remote.address,
@@ -56,26 +52,5 @@ udpServer.on("message", (message, remote) => {
     }
 });
 udpServer.bind(PORT, HOST);
-
-// sub.on("subscribe", (channel, count) => {
-//     const user = {
-//         id: "이데아",
-//         address: "127.0.0.1",
-//         port: "8000",
-//     };
-//     const message = JSON.stringify(user);
-//     pub.publish("Session", message);
-// });
-
-// sub.on("message", (channel, message) => {
-//     console.log("채널명" + channel + "메시지" + message);
-//     msg_count++;
-
-//     if (msg_count == 3) {
-//         sub.unsubscribe();
-//         sub.end;
-//         pub.end;
-//     }
-// });
 
 sub.subscribe("Session");

@@ -75,6 +75,11 @@ public class PlayerController : MonoBehaviour
         StartCoroutine(CheckMove());
     }
 
+    //게임이 프레임단위로 움직이는거 --> 매 프레임마다 위치정보를 보내는거임 -> 패킷 존나 많이씀ㅋㅋ
+    //60프레임 -> 1초에 서버에 패킷을 60번 전송함ㅋㅋ(1명당)
+    //10명만 되도 1초에 서버는 패킷을 600개를 받아야됨ㅋㅋ
+    
+
     // Update is called once per frame
     void Update()
     {

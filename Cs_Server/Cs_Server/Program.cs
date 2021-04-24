@@ -24,22 +24,35 @@ namespace Cs_Server
         public float angle_y;
         public float angle_z;
         public double currentTime;
-        public PlayerMove playerMove;
+        //public PlayerMove playerMove;
         public string nickname;
     };
 
-    public enum PlayerMove
+    public struct Enemy
     {
-        stop,
-        turn_left,
-        turn_right,
-        moveFront,
-        moveBack
+        public int id;
+        public int hp;
+        public int exp;
+        public float x;
+        public float z;
+        public float angle_y;
+        public float damage;
     };
+
+    //public enum PlayerMove
+    //{
+    //    stop,
+    //    turn_left,
+    //    turn_right,
+    //    moveFront,
+    //    moveBack
+    //};
     
     public class Program
     {
         public static List<Address> players;
+        public static List<JObject> enemies;
+        private static int id = 1;
         private static ConnectionMultiplexer connection = ConnectionMultiplexer.Connect(("127.0.0.1:6379,password=osm980811"));
         private const string SessionChannel = "Session"; // Can be anything we want.
         public static bool OverLogin = false;
@@ -49,11 +62,14 @@ namespace Cs_Server
         {
             NetWork useSocket = new NetWork(); //네트워크 클래스의 소켓을 사용하기 위함
             players = new List<Address>(); //서버에서 접속중인 유저들 정보를 담아두는 리스트
+            enemies = new List<JObject>();
 
             Thread socketThread = new Thread(new ThreadStart(useSocket.Start)); //네트워크 클래스의 소켓설정하는 스레드(static함수로 한번실행 후 종료)
             socketThread.Start();
             Thread CheckConnection = new Thread(() => ConnectCheck()); //유저 접속중을 판단하는 스레드.
             CheckConnection.Start();
+            Thread RespawnEnemy = new Thread(() => Respawn());
+            RespawnEnemy.Start();
 
             var pubsub = connection.GetSubscriber(); //redis의 pub/sub설정
             pubsub.Subscribe(SessionChannel, (channel, message) => MessageAction(message,ref players)); //redis에서 pub가 날라오면(로그인이 수행되서 nodejs로부터) MessageAction함수실행
@@ -88,6 +104,40 @@ namespace Cs_Server
                 }
             }
             //연결끊김처리
+        }
+
+        private static void Respawn()
+        {
+            Random rnd = new Random();
+            //랜덤 위치, 각도값
+            //hp, exp, 데미지 초기값
+            //id값
+            //생성(리스트에 넣음)
+            //모든 유저에게 패킷 보냄
+            while(true)
+            {
+                //Console.WriteLine(enemies.Count);
+                if(enemies.Count < 2)
+                {
+                    JObject newEnemy = new JObject();
+                    newEnemy.Add("message", "Respawn");
+                    newEnemy.Add("x", rnd.Next(-5, 5));
+                    newEnemy.Add("z", rnd.Next(-5, 5));
+                    newEnemy.Add("hp", 30);
+                    newEnemy.Add("exp", 10);
+                    newEnemy.Add("angle_y", Convert.ToSingle(rnd.Next(0, 360)));
+                    newEnemy.Add("damage", 5f);
+                    string stringID = Convert.ToString(++id);
+                    newEnemy.Add("id", stringID);
+                    id++;
+                    enemies.Add(newEnemy);
+                    networkClass.setEnemies(ref enemies);
+                    players.ForEach((i) =>
+                    {
+                        networkClass.SendPacket2Server(newEnemy, i.address, i.port);
+                    });
+                }
+            }
         }
 
         private static void LogoutPacketToClient(Address address, Address targetAddress)
@@ -140,11 +190,23 @@ namespace Cs_Server
                 string query = "SELECT * FROM Player WHERE nickname='" + userInfo["nickname"].ToString() + "'";
                 Sql_Read(players, address, query); // 새로 접속한 플레이어의 정보만을 db에서 찾아내고 모든 클라에 보냄
                 Sql_ToOnLine(address.nickname);//접속해서 온라인상태로 변경
+                SendInitialEnemy();
             }
             else //중복로그인일경우
             {
                 Sql_LogOut_OverLogin(address.nickname, address.address, address.port);
             }
+        }
+
+        private static void SendInitialEnemy()
+        {
+            players.ForEach((i) =>
+            {
+                enemies.ForEach((t) =>
+                {
+                    networkClass.SendPacket2Server(t, i.address, i.port);
+                });
+            });
         }
 
         private static void Sql_LogOut_OverLogin(string nickname, string address, int port)
@@ -349,6 +411,11 @@ namespace Cs_Server
         public int port;
         public string nickname;
         public int connectCheck = 5;
+        public float x;
+        public float z;
+        public float angle_y;
+        public string move;
+        public long currentTime;
     } //서버에 접속중인 리스트 클래스
     public class NetWork
     {
@@ -361,7 +428,9 @@ namespace Cs_Server
         Queue<string> Buffer = new Queue<string>();
         object buffer_lock = new object(); //queue충돌 방지용 lock
         public Thread moveThread;
+        public Thread EnemyThread;
         public static List<Address> players;
+        public static List<JObject> enemies;
         EndPoint bindPoint;
         //기본 소켓 구조
 
@@ -376,6 +445,8 @@ namespace Cs_Server
             var outValue = new byte[] { 0 };
             sock.IOControl(sioUdpConnectionReset, inValue, outValue);
             sock.Bind(endPoint);
+            EnemyThread = new Thread(() => EnemyCalculate());
+            EnemyThread.Start();
             /*
             while (true)
             {
@@ -465,6 +536,13 @@ namespace Cs_Server
                     {
                         SendPacket2Server(player, i.address, i.port);
                     });
+                }else if(player["message"].ToString() == "EnemyAction")
+                {
+                    //Console.WriteLine(player["state"].ToString());
+                    JObject target = Program.enemies.Find(i => i["id"].ToString() == player["id"].ToString());
+                    target["x"] = Convert.ToInt32(player["x"].ToString());
+                    target["z"] = Convert.ToInt32(player["z"].ToString());
+                    target["angle_y"] = Convert.ToInt32(player["angle_y"].ToString());
                 }
                 else
                 {
@@ -483,12 +561,49 @@ namespace Cs_Server
             players = playersArr;
         }
 
+        public void setEnemies(ref List<JObject> enemiesArr)
+        {
+            enemies = enemiesArr;
+        }
+
         public void PlayerMove(JObject player)
         {
             //클라에 값 전달
             //double playertime = Single.Parse(player["currentTime"].ToString());
+            Address target = players.Find(i => i.nickname == player["nickname"].ToString());
+            target.x = Convert.ToInt32(player["x"].ToString());
+            target.z = Convert.ToInt32(player["z"].ToString());
+            target.angle_y = Convert.ToInt32(player["angle_y"].ToString());
+            target.move = player["playerMove"].ToString();
+            target.currentTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             players.ForEach((address) => SendToAllClient(address, player));
             moveThread.Interrupt();
+        }
+
+        public void EnemyCalculate()
+        {
+            while(true)
+            {
+                players.ForEach((i) =>
+                {
+                    //현재 유저 x, z좌표값
+                    double userX = (double)i.x + Math.Sin((double)i.angle_y * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - i.currentTime);
+                    double userZ = (double)i.z + Math.Cos((double)i.angle_y * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - i.currentTime);
+
+                    //enemies
+                    enemies.ForEach((x) =>
+                    {
+                        double diffX = userX - Convert.ToDouble(x["x"].ToString());
+                        double diffZ = userZ - Convert.ToDouble(x["z"].ToString());
+
+                        if(Math.Sqrt(diffX * diffX + diffZ * diffZ) < 5f)
+                        {
+                            //어그로 추격시작
+
+                        }
+                    });
+                });
+            }
         }
 
         private void SendToAllClient(Address address, JObject player)
