@@ -49,6 +49,8 @@ public class PlayerController : MonoBehaviour
     public PlayerStateAttack after_action = PlayerStateAttack.None;
     private Network_Login NetworkManager;
     private long Timer;
+
+    private GameObject[] Hit_Enemy;
     #endregion
 
     private void Awake(){

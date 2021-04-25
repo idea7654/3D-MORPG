@@ -15,7 +15,7 @@ public class EnemyFSM : MonoBehaviour
 
     public State currentState = State.Idle;
     public EnemyAni myAni;
-    public Transform player;
+    private Transform player;
 
     float chaseDistance = 5f; //몬스터가 추적을 시작할 거리(어그로)
     float attackDistance = 2.5f; //공격 시작할 거리
@@ -41,6 +41,7 @@ public class EnemyFSM : MonoBehaviour
     public EnemyInfo enemyInfo;
     void Start()
     {
+        /*
         myAni = GetComponent<EnemyAni>();
         ChangeState(State.Idle, EnemyAni.IDLE);
 
@@ -55,6 +56,7 @@ public class EnemyFSM : MonoBehaviour
         enemyInfo.z = transform.position.z;
         enemyInfo.angle_y = transform.eulerAngles.y;
         enemyInfo.message = "EnemyAction";
+        */
     }
 
     void UpdateState()
@@ -105,7 +107,7 @@ public class EnemyFSM : MonoBehaviour
             return;
         }else{
             enemyInfo.state = newState;
-            network.SendPacket2CsServer(enemyInfo);
+            //network.SendPacket2CsServer(enemyInfo);
         }
 
         currentState = newState;
@@ -181,7 +183,7 @@ public class EnemyFSM : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        UpdateState();
+        //UpdateState();
     }
 }
 

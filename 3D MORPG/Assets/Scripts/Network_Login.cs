@@ -56,9 +56,16 @@ public class Network_Login : MonoBehaviour
         public string chat;
         public PlayerStateAttack playerStateAttack;
     };
-    public class ConnectionPacket : Player{
-        //public string message;
-    }
+
+    public class EnemyPacket{
+        public string target;
+        public string message;
+        public double x;
+        public double z;
+        public double angle_y;
+        public string state;
+        public string id;
+    };
     public enum PlayerMove{
         stop = 0,
         turn_left = 1,
@@ -129,7 +136,7 @@ public class Network_Login : MonoBehaviour
     {
         //while(true)
         //{
-            ConnectionPacket packet = new ConnectionPacket();
+            Player packet = new Player();
             packet.message = "connected";
             packet.nickname = PlayerName;
             var player = GameObject.Find(PlayerName);
@@ -182,6 +189,11 @@ public class Network_Login : MonoBehaviour
                 case "Respawn":
                     EnemyRespawn(connectPlayer);
                     break;
+                case "Chase":
+                //case "Attack":
+                //case "AttackAction":
+                    EnemyAI(b);
+                    break;
                 default:
                     break;
             }
@@ -206,6 +218,15 @@ public class Network_Login : MonoBehaviour
         }
         //target.transform.rotation = Quaternion.Euler(new Vector3(0, player.angle_y, 0));
         DeadReckoning(player);
+    }
+
+    void EnemyAI(string b)
+    {
+        EnemyPacket enemyPacket = JsonUtility.FromJson<EnemyPacket>(b);
+        GameObject Enemy = GameObject.Find(enemyPacket.id);
+        Enemy.transform.position = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));
+        Enemy.transform.Rotate(new Vector3(0, Convert.ToSingle(enemyPacket.angle_y), 0));
+        Debug.Log(enemyPacket.message);
     }
 
     void EnemyRespawn(Player player)
@@ -284,27 +305,12 @@ public class Network_Login : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        // if(ConnectionFlag)
-        // {
-        //     if(Time.time > nextTime){
-        //         nextTime = Time.time + 3.0f;
-        //         ConnectionPacket packet = new ConnectionPacket();
-        //         packet.message = "connected";
-        //         packet.nickname = PlayerName;
-        //         var player = GameObject.Find(PlayerName);
-        //         packet.x = player.transform.position.x;
-        //         //packet.y = player.transform.position.y;
-        //         packet.z = player.transform.position.z;
-        //         packet.angle_y = player.transform.eulerAngles.y;
-        //         SendPacket2CsServer(packet);
-        //     }
-        // }
+
     }
 
     public void SendPacket2Server(object obj)
     {
         byte[] userByte = ObjToByte(obj);
-        //sock.Send(userByte, 0, userByte.Length, SocketFlags.None);
         sock.SendTo(userByte, serverEP);
     }
 
@@ -312,7 +318,6 @@ public class Network_Login : MonoBehaviour
     {
         byte[] userByte = ObjToByte(obj);
         sock.SendTo(userByte, userByte.Length, SocketFlags.None, CsServerEP);
-        //Debug.Log(DateTimeOffset.Now.ToUnixTimeMilliseconds());
     }
 
     private byte[] ObjToByte(object obj)

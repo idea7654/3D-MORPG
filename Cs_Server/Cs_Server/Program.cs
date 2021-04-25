@@ -52,7 +52,7 @@ namespace Cs_Server
     {
         public static List<Address> players;
         public static List<JObject> enemies;
-        private static int id = 1;
+        
         private static ConnectionMultiplexer connection = ConnectionMultiplexer.Connect(("127.0.0.1:6379,password=osm980811"));
         private const string SessionChannel = "Session"; // Can be anything we want.
         public static bool OverLogin = false;
@@ -68,8 +68,8 @@ namespace Cs_Server
             socketThread.Start();
             Thread CheckConnection = new Thread(() => ConnectCheck()); //유저 접속중을 판단하는 스레드.
             CheckConnection.Start();
-            Thread RespawnEnemy = new Thread(() => Respawn());
-            RespawnEnemy.Start();
+            //Thread RespawnEnemy = new Thread(() => Respawn());
+            //RespawnEnemy.Start();
 
             var pubsub = connection.GetSubscriber(); //redis의 pub/sub설정
             pubsub.Subscribe(SessionChannel, (channel, message) => MessageAction(message,ref players)); //redis에서 pub가 날라오면(로그인이 수행되서 nodejs로부터) MessageAction함수실행
@@ -105,7 +105,7 @@ namespace Cs_Server
             }
             //연결끊김처리
         }
-
+        /*
         private static void Respawn()
         {
             Random rnd = new Random();
@@ -127,6 +127,7 @@ namespace Cs_Server
                     newEnemy.Add("exp", 10);
                     newEnemy.Add("angle_y", Convert.ToSingle(rnd.Next(0, 360)));
                     newEnemy.Add("damage", 5f);
+                    newEnemy.Add("state", "Idle");
                     string stringID = Convert.ToString(++id);
                     newEnemy.Add("id", stringID);
                     id++;
@@ -138,7 +139,7 @@ namespace Cs_Server
                     });
                 }
             }
-        }
+        }*/
 
         private static void LogoutPacketToClient(Address address, Address targetAddress)
         {
@@ -190,23 +191,13 @@ namespace Cs_Server
                 string query = "SELECT * FROM Player WHERE nickname='" + userInfo["nickname"].ToString() + "'";
                 Sql_Read(players, address, query); // 새로 접속한 플레이어의 정보만을 db에서 찾아내고 모든 클라에 보냄
                 Sql_ToOnLine(address.nickname);//접속해서 온라인상태로 변경
-                SendInitialEnemy();
+                //SendInitialEnemy();
+                networkClass.SendInitialEnemy();
             }
             else //중복로그인일경우
             {
                 Sql_LogOut_OverLogin(address.nickname, address.address, address.port);
             }
-        }
-
-        private static void SendInitialEnemy()
-        {
-            players.ForEach((i) =>
-            {
-                enemies.ForEach((t) =>
-                {
-                    networkClass.SendPacket2Server(t, i.address, i.port);
-                });
-            });
         }
 
         private static void Sql_LogOut_OverLogin(string nickname, string address, int port)
@@ -427,12 +418,19 @@ namespace Cs_Server
         IPEndPoint endPoint;
         Queue<string> Buffer = new Queue<string>();
         object buffer_lock = new object(); //queue충돌 방지용 lock
-        public Thread moveThread;
-        public Thread EnemyThread;
         public static List<Address> players;
         public static List<JObject> enemies;
+        public Thread moveThread;
+        public Thread EnemyThread;
+        public Thread RespawnEnemy;
         EndPoint bindPoint;
         //기본 소켓 구조
+
+        public double ChaseTimer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        public double AttackTimer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        public double AttackDelay = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        public bool ThreadFlag = false;
+        private static int id = 1;
 
         public void Start()
         {
@@ -445,8 +443,12 @@ namespace Cs_Server
             var outValue = new byte[] { 0 };
             sock.IOControl(sioUdpConnectionReset, inValue, outValue);
             sock.Bind(endPoint);
+            players = new List<Address>();
+            enemies = new List<JObject>();
             EnemyThread = new Thread(() => EnemyCalculate());
             EnemyThread.Start();
+            RespawnEnemy = new Thread(() => Respawn());
+            RespawnEnemy.Start();
             /*
             while (true)
             {
@@ -513,15 +515,68 @@ namespace Cs_Server
             }
         }
 
+        private void Respawn()
+        {
+            Random rnd = new Random();
+            //랜덤 위치, 각도값
+            //hp, exp, 데미지 초기값
+            //id값
+            //생성(리스트에 넣음)
+            //모든 유저에게 패킷 보냄
+            //while (true)
+            //{
+                //Console.WriteLine(enemies.Count);
+                /*
+                if (enemies.Count < 2)
+                {
+                    JObject newEnemy = new JObject();
+                    newEnemy.Add("message", "Respawn");
+                    newEnemy.Add("x", rnd.Next(-5, 5));
+                    newEnemy.Add("z", rnd.Next(-5, 5));
+                    newEnemy.Add("hp", 30);
+                    newEnemy.Add("exp", 10);
+                    newEnemy.Add("angle_y", Convert.ToSingle(rnd.Next(0, 360)));
+                    newEnemy.Add("damage", 5f);
+                    newEnemy.Add("state", "Idle");
+                    string stringID = Convert.ToString(++id);
+                    newEnemy.Add("id", stringID);
+                    id++;
+                    enemies.Add(newEnemy);
+                    players.ForEach((i) =>
+                    {
+                        SendPacket2Server(newEnemy, i.address, i.port);
+                    });
+                }
+                */
+            //}
+            if(enemies.Count == 0)
+            {
+                JObject newEnemy = new JObject();
+                newEnemy.Add("message", "Respawn");
+                newEnemy.Add("x", rnd.Next(-5, 5));
+                newEnemy.Add("z", rnd.Next(-5, 5));
+                newEnemy.Add("hp", 30);
+                newEnemy.Add("exp", 10);
+                newEnemy.Add("angle_y", Convert.ToSingle(rnd.Next(0, 360)));
+                newEnemy.Add("damage", 5f);
+                newEnemy.Add("state", "Idle");
+                string stringID = Convert.ToString(++id);
+                newEnemy.Add("id", stringID);
+                id++;
+                enemies.Add(newEnemy);
+                players.ForEach((i) =>
+                {
+                    SendPacket2Server(newEnemy, i.address, i.port);
+                });
+            }
+            RespawnEnemy.Interrupt();
+        }
+
         public void buffer_update(string recvString)
         {
             try
             {
                 string b = recvString;
-                //lock (buffer_lock)
-                //{
-                    //b = Buffer.Dequeue();
-                //}
                 JObject player = JObject.Parse(b);
                 if(player["message"].ToString() == "connected")
                 {
@@ -540,9 +595,9 @@ namespace Cs_Server
                 {
                     //Console.WriteLine(player["state"].ToString());
                     JObject target = Program.enemies.Find(i => i["id"].ToString() == player["id"].ToString());
-                    target["x"] = Convert.ToInt32(player["x"].ToString());
-                    target["z"] = Convert.ToInt32(player["z"].ToString());
-                    target["angle_y"] = Convert.ToInt32(player["angle_y"].ToString());
+                    target["x"] = Convert.ToSingle(player["x"].ToString());
+                    target["z"] = Convert.ToSingle(player["z"].ToString());
+                    target["angle_y"] = Convert.ToSingle(player["angle_y"].ToString());
                 }
                 else
                 {
@@ -561,19 +616,14 @@ namespace Cs_Server
             players = playersArr;
         }
 
-        public void setEnemies(ref List<JObject> enemiesArr)
-        {
-            enemies = enemiesArr;
-        }
-
         public void PlayerMove(JObject player)
         {
             //클라에 값 전달
             //double playertime = Single.Parse(player["currentTime"].ToString());
             Address target = players.Find(i => i.nickname == player["nickname"].ToString());
-            target.x = Convert.ToInt32(player["x"].ToString());
-            target.z = Convert.ToInt32(player["z"].ToString());
-            target.angle_y = Convert.ToInt32(player["angle_y"].ToString());
+            target.x = Convert.ToSingle(player["x"].ToString());
+            target.z = Convert.ToSingle(player["z"].ToString());
+            target.angle_y = Convert.ToSingle(player["angle_y"].ToString());
             target.move = player["playerMove"].ToString();
             target.currentTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             players.ForEach((address) => SendToAllClient(address, player));
@@ -584,26 +634,101 @@ namespace Cs_Server
         {
             while(true)
             {
+                //if(players.Count > 0)
+                //{
+                
+                    for(int i = 0; i < players.Count; i++)
+                    {
+                        double userX = (double)players[i].x + Math.Sin((double)players[i].angle_y * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                        double userZ = (double)players[i].z + Math.Cos((double)players[i].angle_y * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+
+                        for(int x = 0; x < enemies.Count; x++)
+                        {
+                            double diffX = userX - Convert.ToDouble(enemies[x]["x"].ToString());
+                            double diffZ = userZ - Convert.ToDouble(enemies[x]["z"].ToString());
+                            
+                            if (Math.Sqrt(diffX * diffX + diffZ * diffZ) < 5.0f)
+                            {
+                                if (Math.Sqrt(diffX * diffX + diffZ * diffZ) < 1.0f)
+                                {
+                                    StartAttack(players[i], enemies[x], diffX, diffZ);
+                                }
+                                else
+                                {
+                                    //어그로 추격시작
+                                    StartChase(players[i], enemies[x], diffX, diffZ);
+                                }
+                            }
+                        }
+                    }
+                }
+            //}
+        }
+
+        private void StartChase(Address player, JObject enemy, double diffX, double diffZ)
+        {
+            if(DateTimeOffset.Now.ToUnixTimeMilliseconds() - ChaseTimer > 500)
+            {
+                double direction = Math.Atan2(diffZ, diffX);
+                enemy["x"] = Convert.ToDouble(enemy["x"].ToString()) + Math.Cos(direction);
+                enemy["z"] = Convert.ToDouble(enemy["z"].ToString()) + Math.Sin(direction);
+                //Console.WriteLine(player.x);
+                enemy["angle_y"] = direction * 180 / Math.PI;
+                JObject ChaseObject = new JObject();
+                //JObject TargetObject = JObject.FromObject(player);
+                ChaseObject.Add("message", "Chase");
+                ChaseObject.Add("target", player.nickname);
+                ChaseObject.Add("x", enemy["x"]);
+                ChaseObject.Add("z", enemy["z"]);
+                ChaseObject.Add("angle_y", enemy["angle_y"]);
+                ChaseObject.Add("state", enemy["state"]);
+                ChaseObject.Add("id", enemy["id"]);
+                enemy["state"] = "Chase";
                 players.ForEach((i) =>
                 {
-                    //현재 유저 x, z좌표값
-                    double userX = (double)i.x + Math.Sin((double)i.angle_y * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - i.currentTime);
-                    double userZ = (double)i.z + Math.Cos((double)i.angle_y * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - i.currentTime);
-
-                    //enemies
-                    enemies.ForEach((x) =>
-                    {
-                        double diffX = userX - Convert.ToDouble(x["x"].ToString());
-                        double diffZ = userZ - Convert.ToDouble(x["z"].ToString());
-
-                        if(Math.Sqrt(diffX * diffX + diffZ * diffZ) < 5f)
-                        {
-                            //어그로 추격시작
-
-                        }
-                    });
+                    SendPacket2Server(ChaseObject, i.address, i.port);
                 });
+                ChaseTimer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             }
+        }
+
+        private void StartAttack(Address player, JObject enemy, double diffX, double diffZ)
+        {
+            if (DateTimeOffset.Now.ToUnixTimeMilliseconds() - AttackTimer > 500)
+            {
+                double direction = Math.Atan2(diffZ, diffX);
+                enemy["angle_y"] = direction * 180 / Math.PI;
+                JObject AttackObject = new JObject();
+                //JObject TargetObject = JObject.FromObject(player);
+                AttackObject.Add("message", "Attack");
+                AttackObject.Add("target", player.nickname);
+                AttackObject.Add("enemy", enemy);
+
+                players.ForEach((i) =>
+                {
+                    SendPacket2Server(AttackObject, i.address, i.port);
+                });
+
+                if(DateTimeOffset.Now.ToUnixTimeMilliseconds() - AttackDelay > 2000)
+                {
+                    AttackObject["message"] = "AttackAction";
+                    players.ForEach((i) =>
+                    {
+                        SendPacket2Server(AttackObject, i.address, i.port);
+                    });
+                }
+            }
+        }
+
+        public void SendInitialEnemy()
+        {
+            players.ForEach((i) =>
+            {
+                enemies.ForEach((t) =>
+                {
+                    SendPacket2Server(t, i.address, i.port);
+                });
+            });
         }
 
         private void SendToAllClient(Address address, JObject player)
