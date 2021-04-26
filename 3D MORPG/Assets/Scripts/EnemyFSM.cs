@@ -15,13 +15,15 @@ public class EnemyFSM : MonoBehaviour
 
     public State currentState = State.Idle;
     public EnemyAni myAni;
-    private Transform player;
+    //private Transform target;
+    public string target;
+    public float moveAngle = 0;
 
     float chaseDistance = 5f; //몬스터가 추적을 시작할 거리(어그로)
     float attackDistance = 2.5f; //공격 시작할 거리
     float reChaseDistance = 3f; //플레이어가 도망갈 경우 얼마나 떨어져야 다시 추적
     float rotAnglePerSecond = 360f; //초당 회전각도
-    float moveSpeed = 1.3f; //몬스터의 이동속도
+    float moveSpeed = 1.5f; //몬스터의 이동속도
 
     float attackDelay = 2f;
     float attackTimer = 0f;
@@ -38,6 +40,7 @@ public class EnemyFSM : MonoBehaviour
         public State state;
         public string message;
     }
+    public string enemyState;
     public EnemyInfo enemyInfo;
     void Start()
     {
@@ -59,99 +62,99 @@ public class EnemyFSM : MonoBehaviour
         */
     }
 
-    void UpdateState()
-    {
-        StateA = (int)playerController.PlayerStateAttack;
-        switch(currentState)
-        {
-            case State.Idle:
-                IdleState();
-                break;
-            case State.Chase:
-                ChaseState();
-                break;
-            case State.Attack:
-                AttackState();
-                break;
-            case State.Dead:
-                DeadState();
-                break;
-            case State.NoState:
-                NoState();
-                break;
-        }
-    }
+    // void UpdateState()
+    // {
+    //     StateA = (int)playerController.PlayerStateAttack;
+    //     switch(currentState)
+    //     {
+    //         case State.Idle:
+    //             IdleState();
+    //             break;
+    //         case State.Chase:
+    //             ChaseState();
+    //             break;
+    //         case State.Attack:
+    //             AttackState();
+    //             break;
+    //         case State.Dead:
+    //             DeadState();
+    //             break;
+    //         case State.NoState:
+    //             NoState();
+    //             break;
+    //     }
+    // }
 
-    void OnTriggerStay(Collider col)
-    {
-        if(StateA == 1)
-        {
-          if(PlayerAttackTime > 2f)
-          {
-            //   enemyInfo.hp--;
-            //   if(enemyInfo.hp < 0){
-            //       Destroy(gameObject);
-            //       //패킷..
-            //   }
-            //피격판정 패킷
-            PlayerAttackTime = 0f;
-          }
-          PlayerAttackTime += Time.deltaTime;
-        }
-    }
+    // void OnTriggerStay(Collider col)
+    // {
+    //     if(StateA == 1)
+    //     {
+    //       if(PlayerAttackTime > 2f)
+    //       {
+    //         //   enemyInfo.hp--;
+    //         //   if(enemyInfo.hp < 0){
+    //         //       Destroy(gameObject);
+    //         //       //패킷..
+    //         //   }
+    //         //피격판정 패킷
+    //         PlayerAttackTime = 0f;
+    //       }
+    //       PlayerAttackTime += Time.deltaTime;
+    //     }
+    // }
 
-    public void ChangeState(State newState, string aniName)
-    {
-        if(currentState == newState)
-        {
-            return;
-        }else{
-            enemyInfo.state = newState;
-            //network.SendPacket2CsServer(enemyInfo);
-        }
+    // public void ChangeState(State newState, string aniName)
+    // {
+    //     if(currentState == newState)
+    //     {
+    //         return;
+    //     }else{
+    //         enemyInfo.state = newState;
+    //         //network.SendPacket2CsServer(enemyInfo);
+    //     }
 
-        currentState = newState;
-        myAni.ChangeAni(aniName);
-    }
+    //     currentState = newState;
+    //     myAni.ChangeAni(aniName);
+    // }
 
-    void IdleState()
-    {
-        if(GetDistanceFromPlayer() < chaseDistance)
-        {
-            ChangeState(State.Chase, EnemyAni.WALK);
-        }
-    }
+    // void IdleState()
+    // {
+    //     if(GetDistanceFromPlayer() < chaseDistance)
+    //     {
+    //         ChangeState(State.Chase, EnemyAni.WALK);
+    //     }
+    // }
 
-    void ChaseState()
-    {
-        if(GetDistanceFromPlayer() < attackDistance)
-        {
-            ChangeState(State.Attack, EnemyAni.ATTACK);
-        }
-        else{
-            TurnToDestination();
-            MoveToDestination();
-        }
-    }
+    // void ChaseState()
+    // {
+    //     if(GetDistanceFromPlayer() < attackDistance)
+    //     {
+    //         ChangeState(State.Attack, EnemyAni.ATTACK);
+    //     }
+    //     else{
+    //         TurnToDestination();
+    //         MoveToDestination();
+    //     }
+    // }
 
-    void AttackState()
-    {
-        if(GetDistanceFromPlayer() > reChaseDistance)
-        {
-            attackTimer = 0f;
-            ChangeState(State.Chase, EnemyAni.WALK);
-        }
-        else{
-            if(attackTimer > attackDelay)
-            {
-                transform.LookAt(player.position);
-                myAni.ChangeAni(EnemyAni.ATTACK);
+    // void AttackState()
+    // {
+    //     if(GetDistanceFromPlayer() > reChaseDistance)
+    //     {
+    //         attackTimer = 0f;
+    //         ChangeState(State.Chase, EnemyAni.WALK);
+    //     }
+    //     else{
+    //         if(attackTimer > attackDelay)
+    //         {
+    //             //transform.LookAt(player.position);
+    //             myAni.ChangeAni(EnemyAni.ATTACK);
 
-                attackTimer = 0f;
-            }
-            attackTimer += Time.deltaTime;
-        }
-    }
+    //             attackTimer = 0f;
+    //         }
+    //         attackTimer += Time.deltaTime;
+    //     }
+    // }
 
     void DeadState()
     {
@@ -165,6 +168,7 @@ public class EnemyFSM : MonoBehaviour
 
     void TurnToDestination()
     {
+        Transform player = GameObject.Find(target).transform;
         Quaternion lookRotation = Quaternion.LookRotation(player.position - transform.position);
 
         transform.rotation = Quaternion.RotateTowards(transform.rotation, lookRotation, Time.deltaTime * rotAnglePerSecond);
@@ -172,18 +176,54 @@ public class EnemyFSM : MonoBehaviour
 
     void MoveToDestination()
     {
-        transform.position = Vector3.MoveTowards(transform.position, player.position, moveSpeed * Time.deltaTime);
+        Transform player = GameObject.Find(target).transform;
+        float distance = GetDistanceFromPlayer();
+        
+        //transform.position = Vector3.MoveTowards(transform.position, player.position, moveSpeed * Time.deltaTime);
+        float x = Mathf.Sin(moveAngle / 180 * Mathf.PI) * 1.5f * Time.deltaTime;
+        float z = Mathf.Cos(moveAngle / 180 * Mathf.PI) * 1.5f * Time.deltaTime;
+        transform.position += new Vector3(x, 0, z);
     }
 
     float GetDistanceFromPlayer()
     {
+        Transform player = GameObject.Find(target).transform;
         float distance = Vector3.Distance(transform.position, player.position);
         return distance;
     }
     // Update is called once per frame
     void Update()
     {
+        Move();
         //UpdateState();
+    }
+
+    void Move()
+    {
+        switch(enemyState)
+        {
+            case "Chase":
+                //Chase();
+                TurnToDestination();
+                MoveToDestination();
+                break;
+            case "Idle":
+                //Debug.Log("멈춤");
+                break;
+            case "Attack":
+                TurnToDestination();
+                break;
+        }
+    }
+
+    void Chase()
+    {
+        float distance = GetDistanceFromPlayer();
+        if(distance < 2f){
+            float x = Mathf.Sin(transform.eulerAngles.y);
+            float z = Mathf.Cos(transform.eulerAngles.y);
+            transform.position += new Vector3(x, 0, z) * Time.deltaTime;
+        }
     }
 }
 

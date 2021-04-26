@@ -190,9 +190,13 @@ public class Network_Login : MonoBehaviour
                     EnemyRespawn(connectPlayer);
                     break;
                 case "Chase":
-                //case "Attack":
+                case "Attack":
+                    EnemyAI_Attack(b);
                 //case "AttackAction":
                     EnemyAI(b);
+                    break;
+                case "EnemyIdle":
+                    EnemyAI_ToIdle(b);
                     break;
                 default:
                     break;
@@ -224,9 +228,40 @@ public class Network_Login : MonoBehaviour
     {
         EnemyPacket enemyPacket = JsonUtility.FromJson<EnemyPacket>(b);
         GameObject Enemy = GameObject.Find(enemyPacket.id);
-        Enemy.transform.position = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));
-        Enemy.transform.Rotate(new Vector3(0, Convert.ToSingle(enemyPacket.angle_y), 0));
-        Debug.Log(enemyPacket.message);
+        //Enemy.transform.position = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));
+        Vector3 newPosition = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));
+        Enemy.transform.position = Vector3.MoveTowards(newPosition, Enemy.transform.position, 1f * Time.deltaTime);
+        //Enemy.transform.rotation = Quaternion.Euler(new Vector3(0, Convert.ToSingle(enemyPacket.angle_y) + 180, 0));
+        Enemy.GetComponent<EnemyFSM>().enemyState = enemyPacket.state;
+        Enemy.GetComponent<EnemyFSM>().target = enemyPacket.target;
+        Enemy.GetComponent<EnemyFSM>().moveAngle = Convert.ToSingle(enemyPacket.angle_y);
+    }
+
+    void EnemyAI_ToIdle(string b)
+    {
+        EnemyPacket enemyPacket = JsonUtility.FromJson<EnemyPacket>(b);
+        GameObject Enemy = GameObject.Find(enemyPacket.id);
+        //Enemy.transform.position = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));
+        Vector3 newPosition = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));
+        Enemy.transform.position = Vector3.MoveTowards(newPosition, Enemy.transform.position, 0.5f * Time.deltaTime);
+        //Enemy.transform.rotation = Quaternion.Euler(new Vector3(0, Convert.ToSingle(enemyPacket.angle_y) + 180, 0));
+        // if(Vector3.Distance(Enemy.transform.position, new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z))) > 0.5f){
+        //    Debug.Log("이탈!!");
+        // }
+        Enemy.GetComponent<EnemyFSM>().enemyState = enemyPacket.state;
+        Enemy.GetComponent<EnemyFSM>().target = "";
+        Enemy.GetComponent<EnemyFSM>().moveAngle = Convert.ToSingle(enemyPacket.angle_y);
+    }
+
+    void EnemyAI_Attack(string b)
+    {
+        EnemyPacket enemyPacket = JsonUtility.FromJson<EnemyPacket>(b);
+        GameObject Enemy = GameObject.Find(enemyPacket.id);
+        //Enemy.transform.position = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));
+        Vector3 newPosition = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));
+        Enemy.transform.position = Vector3.MoveTowards(newPosition, Enemy.transform.position, 0.5f * Time.deltaTime);
+        Enemy.GetComponent<EnemyFSM>().enemyState = enemyPacket.state;
+        Enemy.GetComponent<EnemyFSM>().target = enemyPacket.target;
     }
 
     void EnemyRespawn(Player player)
