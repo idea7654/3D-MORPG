@@ -561,6 +561,7 @@ namespace Cs_Server
                 newEnemy.Add("angle_y", Convert.ToSingle(rnd.Next(0, 360)));
                 newEnemy.Add("damage", 5f);
                 newEnemy.Add("state", "Idle");
+                newEnemy.Add("target", "None");
                 string stringID = Convert.ToString(++id);
                 newEnemy.Add("id", stringID);
                 id++;
@@ -714,34 +715,46 @@ namespace Cs_Server
                         {
                             double diffX = userX - Convert.ToDouble(enemies[x]["x"].ToString());
                             double diffZ = userZ - Convert.ToDouble(enemies[x]["z"].ToString());
-                            
-                            if (Math.Sqrt(diffX * diffX + diffZ * diffZ) < 7.0f)
+                            if(enemies[x]["target"].ToString() == "None")
                             {
-                                if (Math.Sqrt(diffX * diffX + diffZ * diffZ) < 1.0f)
+                                if(Math.Sqrt(diffX * diffX + diffZ * diffZ) < 7f && Math.Sqrt(diffX * diffX + diffZ * diffZ) > 1f)
                                 {
-                                    StartAttack(players[i], enemies[x], diffX, diffZ);
-                                }
-                                else
-                                {
-                                    //어그로 추격시작
                                     StartChase(players[i], enemies[x], diffX, diffZ);
                                 }
                             }
                             else
                             {
-                                if(enemies[x]["state"].ToString() == "Chase")
+                                if(enemies[x]["target"].ToString() == players[i].nickname)
                                 {
-                                    JObject ToIdle = new JObject();
-                                    ToIdle.Add("message", "EnemyIdle");
-                                    ToIdle.Add("x", enemies[x]["x"]);
-                                    ToIdle.Add("z", enemies[x]["z"]);
-                                    ToIdle.Add("id", enemies[x]["id"]);
-                                    enemies[x]["state"] = "Idle";
-                                    ToIdle.Add("state", enemies[x]["state"]);
-                                    players.ForEach((index) =>
+                                    if (Math.Sqrt(diffX * diffX + diffZ * diffZ) < 7.0f)
                                     {
-                                        SendPacket2Server(ToIdle, index.address, index.port);
-                                    });
+                                        if (Math.Sqrt(diffX * diffX + diffZ * diffZ) < 1.0f)
+                                        {
+                                            StartAttack(players[i], enemies[x], diffX, diffZ);
+                                        }
+                                        else
+                                        {
+                                            //추격시작
+                                            StartChase(players[i], enemies[x], diffX, diffZ);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (enemies[x]["state"].ToString() == "Chase")
+                                        {
+                                            JObject ToIdle = new JObject();
+                                            ToIdle.Add("message", "EnemyIdle");
+                                            ToIdle.Add("x", enemies[x]["x"]);
+                                            ToIdle.Add("z", enemies[x]["z"]);
+                                            ToIdle.Add("id", enemies[x]["id"]);
+                                            enemies[x]["state"] = "Idle";
+                                            enemies[x]["target"] = "None";
+                                            players.ForEach((index) =>
+                                            {
+                                                SendPacket2Server(ToIdle, index.address, index.port);
+                                            });
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -753,14 +766,17 @@ namespace Cs_Server
 
         private void StartChase(Address player, JObject enemy, double diffX, double diffZ)
         {
-            //enemy["x"] = Convert.ToDouble(enemy["x"].ToString()) + diffX / Math.Sqrt(diffX * diffX + diffZ * diffZ) * 1.5f * whileTimer / 1000;
-            //enemy["z"] = Convert.ToDouble(enemy["z"].ToString()) + diffZ / Math.Sqrt(diffX * diffX + diffZ * diffZ) * 1.5f * whileTimer / 1000;
-            enemy["x"] = Convert.ToDouble(enemy["x"].ToString()) + Math.Sin(Convert.ToDouble(enemy["angle_y"].ToString()) / 180 * Math.PI) * 1.5f * whileTimer / 1000;
-            enemy["z"] = Convert.ToDouble(enemy["z"].ToString()) + Math.Cos(Convert.ToDouble(enemy["angle_y"].ToString()) / 180 * Math.PI) * 1.5f * whileTimer / 1000;
-            if (DateTimeOffset.Now.ToUnixTimeMilliseconds() - ChaseTimer > 200)
+            double maxDistanceDelta = 1.5f * whileTimer / 1000;
+            double sqdist = Math.Sqrt(diffX * diffX + diffZ * diffZ);
+            enemy["x"] = Convert.ToDouble(enemy["x"].ToString()) + diffX / sqdist * maxDistanceDelta;
+            enemy["z"] = Convert.ToDouble(enemy["z"].ToString()) + diffZ / sqdist * maxDistanceDelta;
+            enemy["target"] = player.nickname;
+            //enemy["x"] = Convert.ToDouble(enemy["x"].ToString()) + Math.Sin(Convert.ToDouble(enemy["angle_y"].ToString()) / 180 * Math.PI) * 1.5f * whileTimer / 1000;
+            //enemy["z"] = Convert.ToDouble(enemy["z"].ToString()) + Math.Cos(Convert.ToDouble(enemy["angle_y"].ToString()) / 180 * Math.PI) * 1.5f * whileTimer / 1000;
+            if (DateTimeOffset.Now.ToUnixTimeMilliseconds() - ChaseTimer > 400)
             {
                 double direction = Math.Atan2(diffX, diffZ);
-                Console.WriteLine(direction * 180 / Math.PI);
+                //Console.WriteLine(direction * 180 / Math.PI);
                 //enemy["x"] = Convert.ToDouble(enemy["x"].ToString()) + diffX / Math.Sqrt(diffX * diffX + diffZ * diffZ) * whileTimer / 1000;
                 //enemy["z"] = Convert.ToDouble(enemy["z"].ToString()) + diffZ / Math.Sqrt(diffX * diffX + diffZ * diffZ) * whileTimer / 1000;
                 //Console.WriteLine(enemy["x"].ToString());
@@ -785,7 +801,7 @@ namespace Cs_Server
 
         private void StartAttack(Address player, JObject enemy, double diffX, double diffZ)
         {
-            if (DateTimeOffset.Now.ToUnixTimeMilliseconds() - AttackTimer > 200)
+            if (DateTimeOffset.Now.ToUnixTimeMilliseconds() - AttackTimer > 400)
             {
                 double direction = Math.Atan2(diffZ, diffX);
                 enemy["angle_y"] = direction * 180 / Math.PI;

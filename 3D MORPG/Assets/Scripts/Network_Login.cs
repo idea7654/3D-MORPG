@@ -190,10 +190,11 @@ public class Network_Login : MonoBehaviour
                     EnemyRespawn(connectPlayer);
                     break;
                 case "Chase":
+                    EnemyAI(b);
+                    break;
                 case "Attack":
                     EnemyAI_Attack(b);
                 //case "AttackAction":
-                    EnemyAI(b);
                     break;
                 case "EnemyIdle":
                     EnemyAI_ToIdle(b);
@@ -229,10 +230,14 @@ public class Network_Login : MonoBehaviour
         EnemyPacket enemyPacket = JsonUtility.FromJson<EnemyPacket>(b);
         GameObject Enemy = GameObject.Find(enemyPacket.id);
         //Enemy.transform.position = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));
-        Vector3 newPosition = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));
-        Enemy.transform.position = Vector3.MoveTowards(newPosition, Enemy.transform.position, 1f * Time.deltaTime);
+        //Vector3 newPosition = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));
+        //Enemy.transform.position = Vector3.MoveTowards(newPosition, Enemy.transform.position, 1f * Time.deltaTime);
         //Enemy.transform.rotation = Quaternion.Euler(new Vector3(0, Convert.ToSingle(enemyPacket.angle_y) + 180, 0));
-        Enemy.GetComponent<EnemyFSM>().enemyState = enemyPacket.state;
+        // if(Vector3.Distance(Enemy.transform.position, new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z))) > 1f){
+        //    Debug.Log("이탈!!");
+        // }
+        Enemy.GetComponent<EnemyFSM>().enemyState = enemyPacket.message;
+        Debug.Log(enemyPacket.message);
         Enemy.GetComponent<EnemyFSM>().target = enemyPacket.target;
         Enemy.GetComponent<EnemyFSM>().moveAngle = Convert.ToSingle(enemyPacket.angle_y);
     }
@@ -241,15 +246,17 @@ public class Network_Login : MonoBehaviour
     {
         EnemyPacket enemyPacket = JsonUtility.FromJson<EnemyPacket>(b);
         GameObject Enemy = GameObject.Find(enemyPacket.id);
+        Debug.Log(enemyPacket.message);
         //Enemy.transform.position = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));
         Vector3 newPosition = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));
-        Enemy.transform.position = Vector3.MoveTowards(newPosition, Enemy.transform.position, 0.5f * Time.deltaTime);
+        //Enemy.transform.position = Vector3.MoveTowards(Enemy.transform.position, newPosition, 1.5f * Time.deltaTime);
         //Enemy.transform.rotation = Quaternion.Euler(new Vector3(0, Convert.ToSingle(enemyPacket.angle_y) + 180, 0));
-        // if(Vector3.Distance(Enemy.transform.position, new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z))) > 0.5f){
-        //    Debug.Log("이탈!!");
-        // }
-        Enemy.GetComponent<EnemyFSM>().enemyState = enemyPacket.state;
-        Enemy.GetComponent<EnemyFSM>().target = "";
+        //if(Vector3.Distance(Enemy.transform.position, new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z))) > 0.5f){
+        //   Debug.Log("이탈!!");
+        //}
+        Enemy.GetComponent<EnemyFSM>().targetPosition = newPosition;
+        Enemy.GetComponent<EnemyFSM>().enemyState = enemyPacket.message;
+        //Enemy.GetComponent<EnemyFSM>().target = "";
         Enemy.GetComponent<EnemyFSM>().moveAngle = Convert.ToSingle(enemyPacket.angle_y);
     }
 
@@ -259,8 +266,9 @@ public class Network_Login : MonoBehaviour
         GameObject Enemy = GameObject.Find(enemyPacket.id);
         //Enemy.transform.position = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));
         Vector3 newPosition = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));
-        Enemy.transform.position = Vector3.MoveTowards(newPosition, Enemy.transform.position, 0.5f * Time.deltaTime);
-        Enemy.GetComponent<EnemyFSM>().enemyState = enemyPacket.state;
+        //Enemy.transform.position = Vector3.MoveTowards(Enemy.transform.position, newPosition, 1.5f * Time.deltaTime);
+        Enemy.GetComponent<EnemyFSM>().targetPosition = newPosition;
+        Enemy.GetComponent<EnemyFSM>().enemyState = enemyPacket.message;
         Enemy.GetComponent<EnemyFSM>().target = enemyPacket.target;
     }
 

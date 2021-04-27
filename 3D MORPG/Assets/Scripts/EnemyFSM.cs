@@ -42,15 +42,15 @@ public class EnemyFSM : MonoBehaviour
     }
     public string enemyState;
     public EnemyInfo enemyInfo;
+    public Vector3 targetPosition;
     void Start()
     {
-        /*
         myAni = GetComponent<EnemyAni>();
         ChangeState(State.Idle, EnemyAni.IDLE);
 
         network = GameObject.Find("NetworkManager").GetComponent<Network_Login>();
         string playerName = network.PlayerName;
-        player = GameObject.Find(playerName).transform;
+        //player = GameObject.Find(playerName).transform;
         playerController = GameObject.Find(playerName).GetComponent<PlayerController>();
         StateA = (int)playerController.PlayerStateAttack;
         enemyInfo = new EnemyInfo();
@@ -59,7 +59,6 @@ public class EnemyFSM : MonoBehaviour
         enemyInfo.z = transform.position.z;
         enemyInfo.angle_y = transform.eulerAngles.y;
         enemyInfo.message = "EnemyAction";
-        */
     }
 
     // void UpdateState()
@@ -103,19 +102,19 @@ public class EnemyFSM : MonoBehaviour
     //     }
     // }
 
-    // public void ChangeState(State newState, string aniName)
-    // {
-    //     if(currentState == newState)
-    //     {
-    //         return;
-    //     }else{
-    //         enemyInfo.state = newState;
-    //         //network.SendPacket2CsServer(enemyInfo);
-    //     }
+    public void ChangeState(State newState, string aniName)
+    {
+        if(currentState == newState)
+        {
+            return;
+        }else{
+            enemyInfo.state = newState;
+            //network.SendPacket2CsServer(enemyInfo);
+        }
 
-    //     currentState = newState;
-    //     myAni.ChangeAni(aniName);
-    // }
+        currentState = newState;
+        myAni.ChangeAni(aniName);
+    }
 
     // void IdleState()
     // {
@@ -168,7 +167,7 @@ public class EnemyFSM : MonoBehaviour
 
     void TurnToDestination()
     {
-        Transform player = GameObject.Find(target).transform;
+        Transform player = GameObject.Find(target).GetComponent<Transform>();
         Quaternion lookRotation = Quaternion.LookRotation(player.position - transform.position);
 
         transform.rotation = Quaternion.RotateTowards(transform.rotation, lookRotation, Time.deltaTime * rotAnglePerSecond);
@@ -176,13 +175,14 @@ public class EnemyFSM : MonoBehaviour
 
     void MoveToDestination()
     {
-        Transform player = GameObject.Find(target).transform;
-        float distance = GetDistanceFromPlayer();
+        Transform player = GameObject.Find(target).GetComponent<Transform>();
+        //float distance = GetDistanceFromPlayer();
         
-        //transform.position = Vector3.MoveTowards(transform.position, player.position, moveSpeed * Time.deltaTime);
-        float x = Mathf.Sin(moveAngle / 180 * Mathf.PI) * 1.5f * Time.deltaTime;
-        float z = Mathf.Cos(moveAngle / 180 * Mathf.PI) * 1.5f * Time.deltaTime;
-        transform.position += new Vector3(x, 0, z);
+        transform.position = Vector3.MoveTowards(transform.position, player.position, moveSpeed * Time.deltaTime);
+        ChangeState(State.Chase, EnemyAni.WALK);
+        //float x = Mathf.Sin(moveAngle / 180 * Mathf.PI) * 1.5f * Time.deltaTime;
+        //float z = Mathf.Cos(moveAngle / 180 * Mathf.PI) * 1.5f * Time.deltaTime;
+        //transform.position += new Vector3(x, 0, z);
     }
 
     float GetDistanceFromPlayer()
@@ -207,23 +207,20 @@ public class EnemyFSM : MonoBehaviour
                 TurnToDestination();
                 MoveToDestination();
                 break;
-            case "Idle":
+            case "EnemyIdle":
                 //Debug.Log("멈춤");
+                Interpolation();
                 break;
             case "Attack":
+                Interpolation();
                 TurnToDestination();
                 break;
         }
     }
 
-    void Chase()
-    {
-        float distance = GetDistanceFromPlayer();
-        if(distance < 2f){
-            float x = Mathf.Sin(transform.eulerAngles.y);
-            float z = Mathf.Cos(transform.eulerAngles.y);
-            transform.position += new Vector3(x, 0, z) * Time.deltaTime;
-        }
+    void Interpolation(){
+        transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
+        ChangeState(State.Idle, EnemyAni.IDLE);
     }
 }
 
