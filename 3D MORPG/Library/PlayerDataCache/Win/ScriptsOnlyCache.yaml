@@ -79,39 +79,39 @@ ScriptsOnlyBuild:
     - Class: 111
       Script: {instanceID: 0}
     - Class: 114
-      Script: {instanceID: 1726}
+      Script: {instanceID: 1736}
     - Class: 114
-      Script: {instanceID: 1818}
+      Script: {instanceID: 1828}
     - Class: 114
-      Script: {instanceID: 1850}
+      Script: {instanceID: 1860}
     - Class: 114
-      Script: {instanceID: 1900}
+      Script: {instanceID: 1910}
     - Class: 114
-      Script: {instanceID: 2076}
+      Script: {instanceID: 2086}
     - Class: 114
-      Script: {instanceID: 2364}
+      Script: {instanceID: 2374}
     - Class: 114
-      Script: {instanceID: 2458}
+      Script: {instanceID: 2468}
     - Class: 114
-      Script: {instanceID: 2878}
+      Script: {instanceID: 2888}
     - Class: 114
-      Script: {instanceID: 2976}
+      Script: {instanceID: 2986}
     - Class: 114
-      Script: {instanceID: 3050}
+      Script: {instanceID: 3060}
     - Class: 114
-      Script: {instanceID: 3066}
+      Script: {instanceID: 3070}
     - Class: 114
-      Script: {instanceID: 3262}
+      Script: {instanceID: 3266}
     - Class: 114
-      Script: {instanceID: 3296}
+      Script: {instanceID: 3300}
     - Class: 114
-      Script: {instanceID: 3366}
+      Script: {instanceID: 3370}
     - Class: 114
-      Script: {instanceID: 3616}
+      Script: {instanceID: 3620}
     - Class: 114
-      Script: {instanceID: 3678}
+      Script: {instanceID: 3682}
     - Class: 114
-      Script: {instanceID: 3754}
+      Script: {instanceID: 3758}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 128
@@ -174,37 +174,37 @@ ScriptsOnlyBuild:
     - Class: 108
       Script: {instanceID: 0}
     - Class: 114
-      Script: {instanceID: 1726}
+      Script: {instanceID: 1736}
     - Class: 114
-      Script: {instanceID: 1754}
+      Script: {instanceID: 1764}
     - Class: 114
-      Script: {instanceID: 1922}
+      Script: {instanceID: 1932}
     - Class: 114
-      Script: {instanceID: 2364}
+      Script: {instanceID: 2374}
     - Class: 114
-      Script: {instanceID: 2438}
+      Script: {instanceID: 2448}
     - Class: 114
-      Script: {instanceID: 2458}
+      Script: {instanceID: 2468}
     - Class: 114
-      Script: {instanceID: 2604}
+      Script: {instanceID: 2614}
     - Class: 114
-      Script: {instanceID: 2796}
+      Script: {instanceID: 2806}
     - Class: 114
-      Script: {instanceID: 2878}
+      Script: {instanceID: 2888}
     - Class: 114
-      Script: {instanceID: 3066}
+      Script: {instanceID: 3070}
     - Class: 114
-      Script: {instanceID: 3262}
+      Script: {instanceID: 3266}
     - Class: 114
-      Script: {instanceID: 3296}
+      Script: {instanceID: 3300}
     - Class: 114
-      Script: {instanceID: 3366}
+      Script: {instanceID: 3370}
     - Class: 114
-      Script: {instanceID: 3434}
+      Script: {instanceID: 3438}
     - Class: 114
-      Script: {instanceID: 3616}
+      Script: {instanceID: 3620}
     - Class: 114
-      Script: {instanceID: 3630}
+      Script: {instanceID: 3634}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 128
@@ -530,7 +530,7 @@ ScriptsOnlyBuild:
     className: TMP_Settings
   - hash:
       serializedVersion: 2
-      Hash: 260cb8fd09e0d1ee3bee1d95bcab123c
+      Hash: e01aad9d67f6fbc4fb98817d7e09229f
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: EnemyFSM
@@ -730,4 +730,4 @@ ScriptsOnlyBuild:
   scenePathNames:
   - Assets/Scenes/LoginScene.unity
   - Assets/Scenes/SampleScene.unity
-  playerPath: C:/Users/Oh/Desktop/sample/3D MORPG.exe
+  playerPath: C:/Users/Oh/Desktop/sample2/3D MORPG.exe

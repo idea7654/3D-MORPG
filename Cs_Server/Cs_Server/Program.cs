@@ -96,7 +96,12 @@ namespace Cs_Server
                 var find = players.FirstOrDefault(p => p.nickname == address.nickname);
                 if(find != null)
                 {
-                    players.Remove(find);
+                    lock (players)
+                    {
+                        players.Remove(find);
+                        networkClass.setPlayers(ref players);
+                    }
+                    
                     networkClass.setPlayers(ref players);
                     Sql_LogOut(address.nickname);
                     players.ForEach(i => LogoutPacketToClient(i, address));
@@ -105,41 +110,6 @@ namespace Cs_Server
             }
             //연결끊김처리
         }
-        /*
-        private static void Respawn()
-        {
-            Random rnd = new Random();
-            //랜덤 위치, 각도값
-            //hp, exp, 데미지 초기값
-            //id값
-            //생성(리스트에 넣음)
-            //모든 유저에게 패킷 보냄
-            while(true)
-            {
-                //Console.WriteLine(enemies.Count);
-                if(enemies.Count < 2)
-                {
-                    JObject newEnemy = new JObject();
-                    newEnemy.Add("message", "Respawn");
-                    newEnemy.Add("x", rnd.Next(-5, 5));
-                    newEnemy.Add("z", rnd.Next(-5, 5));
-                    newEnemy.Add("hp", 30);
-                    newEnemy.Add("exp", 10);
-                    newEnemy.Add("angle_y", Convert.ToSingle(rnd.Next(0, 360)));
-                    newEnemy.Add("damage", 5f);
-                    newEnemy.Add("state", "Idle");
-                    string stringID = Convert.ToString(++id);
-                    newEnemy.Add("id", stringID);
-                    id++;
-                    enemies.Add(newEnemy);
-                    networkClass.setEnemies(ref enemies);
-                    players.ForEach((i) =>
-                    {
-                        networkClass.SendPacket2Server(newEnemy, i.address, i.port);
-                    });
-                }
-            }
-        }*/
 
         private static void LogoutPacketToClient(Address address, Address targetAddress)
         {
@@ -191,7 +161,6 @@ namespace Cs_Server
                 string query = "SELECT * FROM Player WHERE nickname='" + userInfo["nickname"].ToString() + "'";
                 Sql_Read(players, address, query); // 새로 접속한 플레이어의 정보만을 db에서 찾아내고 모든 클라에 보냄
                 Sql_ToOnLine(address.nickname);//접속해서 온라인상태로 변경
-                //SendInitialEnemy();
                 networkClass.SendInitialEnemy(address);
             }
             else //중복로그인일경우
@@ -429,7 +398,6 @@ namespace Cs_Server
         public double ChaseTimer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         public double AttackTimer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         public double AttackDelay = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-        public bool ThreadFlag = false;
         private static int id = 1;
         private double whileTimer = 0;
 
@@ -448,8 +416,9 @@ namespace Cs_Server
             enemies = new List<JObject>();
             EnemyThread = new Thread(() => EnemyCalculate());
             EnemyThread.Start();
-            RespawnEnemy = new Thread(() => Respawn());
-            RespawnEnemy.Start();
+            //RespawnEnemy = new Thread(() => Respawn());
+            //RespawnEnemy.Start();
+            Respawn();
             /*
             while (true)
             {
@@ -562,7 +531,7 @@ namespace Cs_Server
                 newEnemy.Add("damage", 5f);
                 newEnemy.Add("state", "Idle");
                 newEnemy.Add("target", "None");
-                string stringID = Convert.ToString(++id);
+                string stringID = Convert.ToString(id);
                 newEnemy.Add("id", stringID);
                 id++;
                 enemies.Add(newEnemy);
@@ -571,7 +540,7 @@ namespace Cs_Server
                     SendPacket2Server(newEnemy, i.address, i.port);
                 });
             }
-            RespawnEnemy.Interrupt();
+            //RespawnEnemy.Interrupt();
         }
 
         public void buffer_update(string recvString)
@@ -584,9 +553,18 @@ namespace Cs_Server
                 {
                     //Console.WriteLine(player["nickname"].ToString());
                     Address result = players.Find(x => x.nickname == player["nickname"].ToString());
-                    result.connectCheck = 5;
-                    //검사하면서 유저위치 디비에 업데이트
-                    Program.Sql_SaveUser(player);
+                    if (result != null)
+                    {
+                        result.connectCheck = 5;
+                        //검사하면서 유저위치 디비에 업데이트
+                        Program.Sql_SaveUser(player);
+                    }
+                    else
+                    {
+                        Console.WriteLine("에러요");
+                        //로그아웃 처리가 됐는데 패킷이 올 경우....
+                    }
+                    
                 }else if(player["message"].ToString() == "Chatting")
                 {
                     players.ForEach(i =>
@@ -603,8 +581,9 @@ namespace Cs_Server
                 }
                 else
                 {
-                    moveThread = new Thread(() => PlayerMove(player));
-                    moveThread.Start();
+                    //moveThread = new Thread(() => PlayerMove(player));
+                    //moveThread.Start();
+                    PlayerMove(player);
                 }
             }
             catch(Exception ex)
@@ -615,21 +594,24 @@ namespace Cs_Server
 
         public void setPlayers(ref List<Address> playersArr)
         {
-            players = playersArr;
+            lock (players)
+            {
+                players = playersArr;
+            }
         }
 
         public void PlayerMove(JObject player)
         {
             //클라에 값 전달
             //double playertime = Single.Parse(player["currentTime"].ToString());
-            Address target = players.Find(i => i.nickname == player["nickname"].ToString());
+            Address target = players.Find(i => i.nickname == player["nickname"].ToString()); //에러
             target.x = Convert.ToSingle(player["x"].ToString());
             target.z = Convert.ToSingle(player["z"].ToString());
             target.angle_y = Convert.ToSingle(player["angle_y"].ToString());
             target.move = player["playerMove"].ToString();
             target.currentTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             players.ForEach((address) => SendToAllClient(address, player));
-            moveThread.Interrupt();
+            //moveThread.Interrupt();
         }
 
         public void EnemyCalculate()
@@ -637,122 +619,127 @@ namespace Cs_Server
             while(true)
             {
                 double currentTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                if (players.Count > 0)
+                if (players.Count >= 1)
                 {
-                    for(int i = 0; i < players.Count; i++)
+                    lock (players)
                     {
-                        //double userX = (double)players[i].x + Math.Sin((double)players[i].angle_y * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                        //double userZ = (double)players[i].z + Math.Cos((double)players[i].angle_y * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                        double userX = 0;
-                        double userZ = 0;
-                        double userAngle = (double)players[i].angle_y;
-                        if (players[i].move == "0")
+                        for (int i = 0; i < players.Count; i++)
                         {
-                            userX = (double)players[i].x;
-                            userZ = (double)players[i].z;
-                            userAngle = (double)players[i].angle_y;
-                        }else if(players[i].move == "3")
-                        {
-                            userX = (double)players[i].x + Math.Sin(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                            userZ = (double)players[i].z + Math.Cos(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                            userAngle = (double)players[i].angle_y;
-                        }
-                        else if (players[i].move == "4")
-                        {
-                            userX = (double)players[i].x - Math.Sin(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                            userZ = (double)players[i].z - Math.Cos(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                            userAngle = (double)players[i].angle_y;
-                        }
-                        else if(players[i].move == "1")
-                        {
-                            userX = (double)players[i].x;
-                            userZ = (double)players[i].z;
-                            userAngle = (double)players[i].angle_y - 90 * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                        }
-                        else if(players[i].move == "2")
-                        {
-                            userX = (double)players[i].x;
-                            userZ = (double)players[i].z;
-                            userAngle = (double)players[i].angle_y + 90 * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                        }
-                        else if(players[i].move == "5")
-                        {
-                            userX = (double)players[i].x + Math.Sin(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                            userZ = (double)players[i].z + Math.Cos(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                            userAngle = (double)players[i].angle_y - 90 * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                        }
-                        else if(players[i].move == "6")
-                        {
-                            userX = (double)players[i].x + Math.Sin(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                            userZ = (double)players[i].z + Math.Cos(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                            userAngle = (double)players[i].angle_y + 90 * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                        }
-                        else if(players[i].move == "7")
-                        {
-                            userX = (double)players[i].x - Math.Sin(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                            userZ = (double)players[i].z - Math.Cos(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                            userAngle = (double)players[i].angle_y - 90 * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                        }
-                        else
-                        {
-                            userX = (double)players[i].x - Math.Sin(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                            userZ = (double)players[i].z - Math.Cos(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                            userAngle = (double)players[i].angle_y + 90 * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                        }
-                        if(players[i].angle_y > 180)
-                        {
-                            players[i].angle_y = Convert.ToSingle(userAngle) - 360;
-                        }else if(players[i].angle_y < -180)
-                        {
-                            players[i].angle_y = Convert.ToSingle(userAngle) + 360;
-                        }
-                        else
-                        {
-                            players[i].angle_y = Convert.ToSingle(userAngle);
-                        }
-                        
-                        for (int x = 0; x < enemies.Count; x++)
-                        {
-                            double diffX = userX - Convert.ToDouble(enemies[x]["x"].ToString());
-                            double diffZ = userZ - Convert.ToDouble(enemies[x]["z"].ToString());
-                            if(enemies[x]["target"].ToString() == "None")
+                            //double userX = (double)players[i].x + Math.Sin((double)players[i].angle_y * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                            //double userZ = (double)players[i].z + Math.Cos((double)players[i].angle_y * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                            double userX = 0;
+                            double userZ = 0;
+                            double userAngle = (double)players[i].angle_y;
+                            if (players[i].move == "0")
                             {
-                                if(Math.Sqrt(diffX * diffX + diffZ * diffZ) < 7f && Math.Sqrt(diffX * diffX + diffZ * diffZ) > 1f)
-                                {
-                                    StartChase(players[i], enemies[x], diffX, diffZ);
-                                }
+                                userX = (double)players[i].x;
+                                userZ = (double)players[i].z;
+                                userAngle = (double)players[i].angle_y;
+                            }
+                            else if (players[i].move == "3")
+                            {
+                                userX = (double)players[i].x + Math.Sin(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                                userZ = (double)players[i].z + Math.Cos(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                                userAngle = (double)players[i].angle_y;
+                            }
+                            else if (players[i].move == "4")
+                            {
+                                userX = (double)players[i].x - Math.Sin(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                                userZ = (double)players[i].z - Math.Cos(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                                userAngle = (double)players[i].angle_y;
+                            }
+                            else if (players[i].move == "1")
+                            {
+                                userX = (double)players[i].x;
+                                userZ = (double)players[i].z;
+                                userAngle = (double)players[i].angle_y - 90 * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                            }
+                            else if (players[i].move == "2")
+                            {
+                                userX = (double)players[i].x;
+                                userZ = (double)players[i].z;
+                                userAngle = (double)players[i].angle_y + 90 * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                            }
+                            else if (players[i].move == "5")
+                            {
+                                userX = (double)players[i].x + Math.Sin(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                                userZ = (double)players[i].z + Math.Cos(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                                userAngle = (double)players[i].angle_y - 90 * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                            }
+                            else if (players[i].move == "6")
+                            {
+                                userX = (double)players[i].x + Math.Sin(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                                userZ = (double)players[i].z + Math.Cos(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                                userAngle = (double)players[i].angle_y + 90 * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                            }
+                            else if (players[i].move == "7")
+                            {
+                                userX = (double)players[i].x - Math.Sin(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                                userZ = (double)players[i].z - Math.Cos(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                                userAngle = (double)players[i].angle_y - 90 * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
                             }
                             else
                             {
-                                if(enemies[x]["target"].ToString() == players[i].nickname)
+                                userX = (double)players[i].x - Math.Sin(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                                userZ = (double)players[i].z - Math.Cos(userAngle * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                                userAngle = (double)players[i].angle_y + 90 * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
+                            }
+                            if (players[i].angle_y > 180)
+                            {
+                                players[i].angle_y = Convert.ToSingle(userAngle) - 360;
+                            }
+                            else if (players[i].angle_y < -180)
+                            {
+                                players[i].angle_y = Convert.ToSingle(userAngle) + 360;
+                            }
+                            else
+                            {
+                                players[i].angle_y = Convert.ToSingle(userAngle);
+                            }
+
+                            for (int x = 0; x < enemies.Count; x++)
+                            {
+                                double diffX = userX - Convert.ToDouble(enemies[x]["x"].ToString());
+                                double diffZ = userZ - Convert.ToDouble(enemies[x]["z"].ToString());
+                                if (enemies[x]["target"].ToString() == "None")
                                 {
-                                    if (Math.Sqrt(diffX * diffX + diffZ * diffZ) < 7.0f)
+                                    if (Math.Sqrt(diffX * diffX + diffZ * diffZ) < 7f && Math.Sqrt(diffX * diffX + diffZ * diffZ) > 1f)
                                     {
-                                        if (Math.Sqrt(diffX * diffX + diffZ * diffZ) < 1.0f)
+                                        StartChase(players[i], enemies[x], diffX, diffZ);
+                                    }
+                                }
+                                else
+                                {
+                                    if (enemies[x]["target"].ToString() == players[i].nickname)
+                                    {
+                                        if (Math.Sqrt(diffX * diffX + diffZ * diffZ) < 7.0f)
                                         {
-                                            StartAttack(players[i], enemies[x], diffX, diffZ);
+                                            if (Math.Sqrt(diffX * diffX + diffZ * diffZ) < 1.0f)
+                                            {
+                                                StartAttack(players[i], enemies[x], diffX, diffZ);
+                                            }
+                                            else
+                                            {
+                                                //추격시작
+                                                StartChase(players[i], enemies[x], diffX, diffZ);
+                                            }
                                         }
                                         else
                                         {
-                                            //추격시작
-                                            StartChase(players[i], enemies[x], diffX, diffZ);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        if (enemies[x]["state"].ToString() == "Chase")
-                                        {
-                                            JObject ToIdle = new JObject();
-                                            ToIdle.Add("message", "EnemyIdle");
-                                            ToIdle.Add("x", enemies[x]["x"]);
-                                            ToIdle.Add("z", enemies[x]["z"]);
-                                            ToIdle.Add("id", enemies[x]["id"]);
-                                            enemies[x]["state"] = "Idle";
-                                            enemies[x]["target"] = "None";
-                                            players.ForEach((index) =>
+                                            if (enemies[x]["state"].ToString() == "Chase")
                                             {
-                                                SendPacket2Server(ToIdle, index.address, index.port);
-                                            });
+                                                JObject ToIdle = new JObject();
+                                                ToIdle.Add("message", "EnemyIdle");
+                                                ToIdle.Add("x", enemies[x]["x"]);
+                                                ToIdle.Add("z", enemies[x]["z"]);
+                                                ToIdle.Add("id", enemies[x]["id"]);
+                                                enemies[x]["state"] = "Idle";
+                                                enemies[x]["target"] = "None";
+                                                players.ForEach((index) =>
+                                                {
+                                                    SendPacket2Server(ToIdle, index.address, index.port);
+                                                });
+                                            }
                                         }
                                     }
                                 }
@@ -801,7 +788,7 @@ namespace Cs_Server
 
         private void StartAttack(Address player, JObject enemy, double diffX, double diffZ)
         {
-            if (DateTimeOffset.Now.ToUnixTimeMilliseconds() - AttackTimer > 400)
+            if (DateTimeOffset.Now.ToUnixTimeMilliseconds() - ChaseTimer > 400)
             {
                 double direction = Math.Atan2(diffZ, diffX);
                 enemy["angle_y"] = direction * 180 / Math.PI;
@@ -819,15 +806,16 @@ namespace Cs_Server
                 {
                     SendPacket2Server(AttackObject, i.address, i.port);
                 });
-                /*
+                
                 if(DateTimeOffset.Now.ToUnixTimeMilliseconds() - AttackDelay > 2000)
                 {
-                    AttackObject["message"] = "AttackAction";
+                    AttackObject.Add("attack", true);
                     players.ForEach((i) =>
                     {
                         SendPacket2Server(AttackObject, i.address, i.port);
                     });
-                }*/
+                }
+                ChaseTimer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             }
         }
 

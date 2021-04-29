@@ -49,6 +49,7 @@ public class PlayerController : MonoBehaviour
     public PlayerStateAttack after_action = PlayerStateAttack.None;
     private Network_Login NetworkManager;
     private long Timer;
+    private float ConnectionTimer = 0;
 
     private GameObject[] Hit_Enemy;
     #endregion
@@ -223,6 +224,14 @@ public class PlayerController : MonoBehaviour
             }
             after_move = before_move;
             after_action = before_action;
+            
+            if(ConnectionTimer > 1f){
+                NetworkManager.ConnectPacket();
+                ConnectionTimer = 0f;
+            }
+
+            ConnectionTimer += Time.deltaTime;
+
             yield return null;
         }
     }

@@ -43,6 +43,7 @@ public class EnemyFSM : MonoBehaviour
     public string enemyState;
     public EnemyInfo enemyInfo;
     public Vector3 targetPosition;
+    public bool attack = false;
     void Start()
     {
         myAni = GetComponent<EnemyAni>();
@@ -214,6 +215,7 @@ public class EnemyFSM : MonoBehaviour
             case "Attack":
                 Interpolation();
                 TurnToDestination();
+                AttackAnimation();
                 break;
         }
     }
@@ -221,6 +223,13 @@ public class EnemyFSM : MonoBehaviour
     void Interpolation(){
         transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
         ChangeState(State.Idle, EnemyAni.IDLE);
+    }
+
+    void AttackAnimation()
+    {
+        if(attack){
+            myAni.ChangeAni(EnemyAni.ATTACK);
+        }
     }
 }
 

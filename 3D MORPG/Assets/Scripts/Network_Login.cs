@@ -65,6 +65,7 @@ public class Network_Login : MonoBehaviour
         public double angle_y;
         public string state;
         public string id;
+        public bool attack = false;
     };
     public enum PlayerMove{
         stop = 0,
@@ -132,7 +133,7 @@ public class Network_Login : MonoBehaviour
         }
     }
 
-    void ConnectPacket()
+    public void ConnectPacket()
     {
         //while(true)
         //{
@@ -165,7 +166,7 @@ public class Network_Login : MonoBehaviour
                 case "Connect":
                     ConnectNewPlayer(connectPlayer);
                     //StartCoroutine(ConnectPacket());
-                    InvokeRepeating("ConnectPacket", 1f, 1f);
+                    //InvokeRepeating("ConnectPacket", 1f, 0.5f);
                     //ConnectionFlag = true;
                     break;
                 case "OtherPlayers":
@@ -237,8 +238,8 @@ public class Network_Login : MonoBehaviour
         //    Debug.Log("이탈!!");
         // }
         Enemy.GetComponent<EnemyFSM>().enemyState = enemyPacket.message;
-        Debug.Log(enemyPacket.message);
         Enemy.GetComponent<EnemyFSM>().target = enemyPacket.target;
+        Enemy.GetComponent<EnemyFSM>().attack = enemyPacket.attack;
         Enemy.GetComponent<EnemyFSM>().moveAngle = Convert.ToSingle(enemyPacket.angle_y);
     }
 
@@ -246,7 +247,6 @@ public class Network_Login : MonoBehaviour
     {
         EnemyPacket enemyPacket = JsonUtility.FromJson<EnemyPacket>(b);
         GameObject Enemy = GameObject.Find(enemyPacket.id);
-        Debug.Log(enemyPacket.message);
         //Enemy.transform.position = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));
         Vector3 newPosition = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));
         //Enemy.transform.position = Vector3.MoveTowards(Enemy.transform.position, newPosition, 1.5f * Time.deltaTime);
@@ -256,7 +256,7 @@ public class Network_Login : MonoBehaviour
         //}
         Enemy.GetComponent<EnemyFSM>().targetPosition = newPosition;
         Enemy.GetComponent<EnemyFSM>().enemyState = enemyPacket.message;
-        //Enemy.GetComponent<EnemyFSM>().target = "";
+        Enemy.GetComponent<EnemyFSM>().attack = enemyPacket.attack;
         Enemy.GetComponent<EnemyFSM>().moveAngle = Convert.ToSingle(enemyPacket.angle_y);
     }
 
@@ -269,6 +269,7 @@ public class Network_Login : MonoBehaviour
         //Enemy.transform.position = Vector3.MoveTowards(Enemy.transform.position, newPosition, 1.5f * Time.deltaTime);
         Enemy.GetComponent<EnemyFSM>().targetPosition = newPosition;
         Enemy.GetComponent<EnemyFSM>().enemyState = enemyPacket.message;
+        Enemy.GetComponent<EnemyFSM>().attack = enemyPacket.attack;
         Enemy.GetComponent<EnemyFSM>().target = enemyPacket.target;
     }
 
@@ -293,7 +294,6 @@ public class Network_Login : MonoBehaviour
 
     void ActionPlayer(Player player)
     {
-        Debug.Log(player.playerStateAttack);
         OtherPlayerController otherObject = GameObject.Find(player.nickname).GetComponent<OtherPlayerController>();
         if(otherObject)
         {
