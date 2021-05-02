@@ -85,7 +85,7 @@ namespace Cs_Server
 
         private static void ConnectCheck()
         {
-            SetInterval(() => players.ForEach(ConnectionCount), TimeSpan.FromSeconds(1)); //1초마다 접속해있는 모든 유저의 connectCheck값 1씩 감소, 0이 되면 접속해제
+            SetInterval(() => players.ForEach(ConnectionCount), TimeSpan.FromSeconds(3)); //1초마다 접속해있는 모든 유저의 connectCheck값 1씩 감소, 0이 되면 접속해제
         }
 
         private static void ConnectionCount(Address address)
@@ -400,6 +400,7 @@ namespace Cs_Server
         public double AttackDelay = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         private static int id = 1;
         private double whileTimer = 0;
+        long timerasdf = 0;
 
         public void Start()
         {
@@ -441,10 +442,12 @@ namespace Cs_Server
             } //기존의 동기방식
             */
             //sock.Connect(endPoint);
-            sock.BeginReceiveFrom(recvByte, 0, recvByte.Length, SocketFlags.None, ref bindPoint, new AsyncCallback(RecvCallBack), recvByte);
+            
+            
             try
             {
-                while(true)
+                sock.BeginReceiveFrom(recvByte, 0, recvByte.Length, SocketFlags.None, ref bindPoint, new AsyncCallback(RecvCallBack), recvByte);
+                while (true)
                 {
 
                 }
@@ -464,6 +467,7 @@ namespace Cs_Server
                 if(size > 0)
                 {
                     byte[] recvBuffer = new byte[512];
+                    timerasdf = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                     recvBuffer = (byte[])result.AsyncState;
 
                     //로직 처리
@@ -578,18 +582,29 @@ namespace Cs_Server
                     target["x"] = Convert.ToSingle(player["x"].ToString());
                     target["z"] = Convert.ToSingle(player["z"].ToString());
                     target["angle_y"] = Convert.ToSingle(player["angle_y"].ToString());
+                }else if(player["message"].ToString() == "Attack")
+                {
+                    CheckAttack(player);
                 }
                 else
                 {
-                    //moveThread = new Thread(() => PlayerMove(player));
-                    //moveThread.Start();
-                    PlayerMove(player);
+                    moveThread = new Thread(() => PlayerMove(player));
+                    moveThread.Start();
+                    //PlayerMove(player);
                 }
             }
             catch(Exception ex)
             {
                 Console.WriteLine(ex);
             }
+        }
+
+        private void CheckAttack(JObject player)
+        {
+            //범위 지정.
+            //해당 범위 안에 몹이 있으면
+            //해당 몹의 hp를 깎고
+            //해당 정보를 클라로 전송!!
         }
 
         public void setPlayers(ref List<Address> playersArr)
@@ -604,14 +619,15 @@ namespace Cs_Server
         {
             //클라에 값 전달
             //double playertime = Single.Parse(player["currentTime"].ToString());
+            players.ForEach((address) => SendToAllClient(address, player));
             Address target = players.Find(i => i.nickname == player["nickname"].ToString()); //에러
             target.x = Convert.ToSingle(player["x"].ToString());
             target.z = Convert.ToSingle(player["z"].ToString());
             target.angle_y = Convert.ToSingle(player["angle_y"].ToString());
             target.move = player["playerMove"].ToString();
             target.currentTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            players.ForEach((address) => SendToAllClient(address, player));
-            //moveThread.Interrupt();
+            Console.WriteLine(DateTimeOffset.Now.ToUnixTimeMilliseconds() - timerasdf);
+            moveThread.Interrupt();
         }
 
         public void EnemyCalculate()

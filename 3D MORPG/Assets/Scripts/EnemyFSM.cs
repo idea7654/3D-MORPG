@@ -62,28 +62,28 @@ public class EnemyFSM : MonoBehaviour
         enemyInfo.message = "EnemyAction";
     }
 
-    // void UpdateState()
-    // {
-    //     StateA = (int)playerController.PlayerStateAttack;
-    //     switch(currentState)
-    //     {
-    //         case State.Idle:
-    //             IdleState();
-    //             break;
-    //         case State.Chase:
-    //             ChaseState();
-    //             break;
-    //         case State.Attack:
-    //             AttackState();
-    //             break;
-    //         case State.Dead:
-    //             DeadState();
-    //             break;
-    //         case State.NoState:
-    //             NoState();
-    //             break;
-    //     }
-    // }
+    void UpdateState()
+    {
+        StateA = (int)playerController.PlayerStateAttack;
+        // switch(currentState)
+        // {
+        //     case State.Idle:
+        //         IdleState();
+        //         break;
+        //     case State.Chase:
+        //         ChaseState();
+        //         break;
+        //     case State.Attack:
+        //         AttackState();
+        //         break;
+        //     case State.Dead:
+        //         DeadState();
+        //         break;
+        //     case State.NoState:
+        //         NoState();
+        //         break;
+        // }
+    }
 
     // void OnTriggerStay(Collider col)
     // {
@@ -196,7 +196,7 @@ public class EnemyFSM : MonoBehaviour
     void Update()
     {
         Move();
-        //UpdateState();
+        UpdateState();
     }
 
     void Move()

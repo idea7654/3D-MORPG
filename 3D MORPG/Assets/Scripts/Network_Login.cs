@@ -86,6 +86,7 @@ public class Network_Login : MonoBehaviour
     #endregion
     // Start is called before the first frame update
     public string PlayerName;
+    private long sampleTimer;
     void Awake() {
         DontDestroyOnLoad(gameObject);
     }
@@ -112,15 +113,46 @@ public class Network_Login : MonoBehaviour
 
     void ServerCheck()
     {
-        while(true)
+        // while(true)
+        // {
+        //     sock.Receive(recvByte, 0, recvByte.Length, SocketFlags.None);//서버에서 온 패킷을 버퍼에 담기
+        //     string t = Encoding.Default.GetString(recvByte); //큐에 버퍼를 넣을 준비
+        //     t = t.Replace("\0", string.Empty); //버퍼 마지막에 공백이 있는지 검색하고 공백을 삭제
+        //     lock(buffer_lock){ //큐 충돌방지
+        //        Buffer.Enqueue(t); //큐에 버퍼 저장
+        //     }
+        //     System.Array.Clear(recvByte, 0, recvByte.Length); //버퍼를 사용후 초기화
+        // }
+        sock.BeginReceiveFrom(recvByte, 0, recvByte.Length, SocketFlags.None, ref remoteEP, new AsyncCallback(RecvCallBack), recvByte);
+
+        void RecvCallBack(IAsyncResult result)
         {
-            sock.Receive(recvByte, 0, recvByte.Length, SocketFlags.None);//서버에서 온 패킷을 버퍼에 담기
-            string t = Encoding.Default.GetString(recvByte); //큐에 버퍼를 넣을 준비
-            t = t.Replace("\0", string.Empty); //버퍼 마지막에 공백이 있는지 검색하고 공백을 삭제
-            lock(buffer_lock){ //큐 충돌방지
-               Buffer.Enqueue(t); //큐에 버퍼 저장
+            sampleTimer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            try
+            {
+                int size = sock.EndReceiveFrom(result, ref remoteEP);
+
+                if(size > 0)
+                {
+                    byte[] recvBuffer = new byte[512];
+                    recvBuffer = (byte[])result.AsyncState;
+
+                    //로직 처리
+                    string recvString = Encoding.UTF8.GetString(recvBuffer);
+                    recvString = recvString.Replace("\0", string.Empty);
+
+                    lock (buffer_lock)
+                    { //큐 충돌방지
+                       Buffer.Enqueue(recvString); //큐에 버퍼 저장
+                    }
+                    System.Array.Clear(recvByte, 0, recvByte.Length); //버퍼를 사용후 초기화
+                }
+                sock.BeginReceiveFrom(recvByte, 0, recvByte.Length, SocketFlags.None, ref remoteEP, new AsyncCallback(RecvCallBack), recvByte);
             }
-            System.Array.Clear(recvByte, 0, recvByte.Length); //버퍼를 사용후 초기화
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
         }
     }
 
@@ -288,7 +320,8 @@ public class Network_Login : MonoBehaviour
     {
         float x = Mathf.Cos(player.angle_y * Mathf.PI / 180) * speed * Convert.ToSingle(latency) / 1000 * Time.deltaTime;
         float z = Mathf.Sin(player.angle_y * Mathf.PI / 180) * speed * Convert.ToSingle(latency) / 1000 * Time.deltaTime;
-        target.transform.position = new Vector3(player.x, player.y, player.z) + new Vector3(x, 0, z);
+        Vector3 targetVector = new Vector3(player.x, player.y, player.z) + new Vector3(x, 0, z);
+        target.transform.position = Vector3.Lerp(target.transform.position, targetVector, Time.deltaTime);
         target.transform.rotation = Quaternion.Euler(new Vector3(0, player.angle_y, 0));
     }
 

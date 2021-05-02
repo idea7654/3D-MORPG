@@ -50,6 +50,7 @@ public class PlayerController : MonoBehaviour
     private Network_Login NetworkManager;
     private long Timer;
     private float ConnectionTimer = 0;
+    private long sampleTimer;
 
     private GameObject[] Hit_Enemy;
     #endregion
@@ -116,6 +117,7 @@ public class PlayerController : MonoBehaviour
             PlayerState = PlayerState.Move;
             charaPos.playerMove = PlayerMove.moveFrontLeft;
             before_move = PlayerMove.moveFrontLeft;
+            //sampleTimer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
         else if(Input.GetKey(KeyCode.RightArrow) && Input.GetKey(KeyCode.UpArrow))
         {
@@ -125,6 +127,7 @@ public class PlayerController : MonoBehaviour
             PlayerState = PlayerState.Move;
             charaPos.playerMove = PlayerMove.moveFrontRight;
             before_move = PlayerMove.moveFrontRight;
+            //sampleTimer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
         else if(Input.GetKey(KeyCode.RightArrow) && Input.GetKey(KeyCode.DownArrow))
         {
@@ -134,6 +137,7 @@ public class PlayerController : MonoBehaviour
             PlayerState = PlayerState.Move;
             charaPos.playerMove = PlayerMove.moveBackRight;
             before_move = PlayerMove.moveBackRight;
+            //sampleTimer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
         else if(Input.GetKey(KeyCode.LeftArrow) && Input.GetKey(KeyCode.DownArrow))
         {
@@ -143,6 +147,7 @@ public class PlayerController : MonoBehaviour
             PlayerState = PlayerState.Move;
             charaPos.playerMove = PlayerMove.moveBackLeft;
             before_move = PlayerMove.moveBackLeft;
+            //sampleTimer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
         else if(Input.GetKey(KeyCode.LeftArrow)){
             charaPos.angle_y = -90;
@@ -150,6 +155,7 @@ public class PlayerController : MonoBehaviour
             charaPos.z = 0;
             charaPos.playerMove = PlayerMove.turn_left;
             before_move = PlayerMove.turn_left;
+            //sampleTimer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
         else if(Input.GetKey(KeyCode.RightArrow)){
             charaPos.angle_y = 90;
@@ -157,6 +163,7 @@ public class PlayerController : MonoBehaviour
             charaPos.z = 0;
             charaPos.playerMove = PlayerMove.turn_right;
             before_move = PlayerMove.turn_right;
+            //sampleTimer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
         else if(Input.GetKey(KeyCode.UpArrow)){
             charaPos.x = speed * Mathf.Sin(transform.eulerAngles.y * Mathf.PI / 180);
@@ -165,6 +172,7 @@ public class PlayerController : MonoBehaviour
             PlayerState = PlayerState.Move;
             charaPos.playerMove = PlayerMove.moveFront;
             before_move = PlayerMove.moveFront;
+            //sampleTimer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
         else if(Input.GetKey(KeyCode.DownArrow)){
             charaPos.x = -speed * Mathf.Sin(transform.eulerAngles.y * Mathf.PI / 180);
@@ -173,6 +181,7 @@ public class PlayerController : MonoBehaviour
             PlayerState = PlayerState.Move;
             charaPos.playerMove = PlayerMove.moveBack;
             before_move = PlayerMove.moveBack;
+            //sampleTimer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
         else{    
             charaPos.x = 0;
@@ -181,6 +190,7 @@ public class PlayerController : MonoBehaviour
             PlayerState = PlayerState.Idle;
             charaPos.playerMove = PlayerMove.stop;
             before_move = PlayerMove.stop;
+            //sampleTimer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
 
         if(Input.GetKeyDown(KeyCode.A))
@@ -188,6 +198,12 @@ public class PlayerController : MonoBehaviour
             if(DateTimeOffset.Now.ToUnixTimeMilliseconds() - Timer > 1000){
                 PlayerStateAttack = PlayerStateAttack.Attack;
                 before_action = PlayerStateAttack.Attack;
+                charaPos.message = "Attack";
+                charaPos.x = transform.position.x;
+                charaPos.y = transform.position.y;
+                charaPos.z = transform.position.z;
+                charaPos.angle_y = transform.eulerAngles.y;
+                NetworkManager.SendPacket2CsServer(charaPos);
                 Invoke("Change2Idle", 0.94f);
                 Timer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             }
@@ -214,6 +230,7 @@ public class PlayerController : MonoBehaviour
                 charaPos.currentTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                 //Debug.Log(DateTimeOffset.Now.ToUnixTimeMilliseconds());
                 NetworkManager.SendPacket2CsServer(charaPos);
+                //Debug.Log(DateTimeOffset.Now.ToUnixTimeMilliseconds() - sampleTimer);
             }
 
             if(before_action != after_action)
