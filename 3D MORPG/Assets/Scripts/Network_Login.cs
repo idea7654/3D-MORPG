@@ -9,6 +9,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.IO;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 [Serializable]
 public class Network_Login : MonoBehaviour
 {
@@ -232,6 +233,9 @@ public class Network_Login : MonoBehaviour
                 case "EnemyIdle":
                     EnemyAI_ToIdle(b);
                     break;
+                case "EnemyDie":
+                    EnemyDie(b);
+                    break;
                 default:
                     break;
             }
@@ -256,6 +260,14 @@ public class Network_Login : MonoBehaviour
         }
         //target.transform.rotation = Quaternion.Euler(new Vector3(0, player.angle_y, 0));
         DeadReckoning(player);
+    }
+
+    void EnemyDie(string b)
+    {
+        EnemyPacket enemyPacket = JsonUtility.FromJson<EnemyPacket>(b);
+        GameObject Enemy = GameObject.Find(enemyPacket.id);
+
+        Destroy(Enemy);
     }
 
     void EnemyAI(string b)
@@ -296,6 +308,12 @@ public class Network_Login : MonoBehaviour
     {
         EnemyPacket enemyPacket = JsonUtility.FromJson<EnemyPacket>(b);
         GameObject Enemy = GameObject.Find(enemyPacket.id);
+        if(enemyPacket.attack){
+            if(enemyPacket.target == PlayerName){
+                Slider slider = GameObject.Find("HPBar").GetComponent<Slider>();
+                slider.value -= 10f / 100;
+            }
+        }
         //Enemy.transform.position = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));
         Vector3 newPosition = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));
         //Enemy.transform.position = Vector3.MoveTowards(Enemy.transform.position, newPosition, 1.5f * Time.deltaTime);

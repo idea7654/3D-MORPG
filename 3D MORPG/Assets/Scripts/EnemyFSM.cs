@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
 public class EnemyFSM : MonoBehaviour
 {
     // Start is called before the first frame update
@@ -178,8 +177,10 @@ public class EnemyFSM : MonoBehaviour
     {
         Transform player = GameObject.Find(target).GetComponent<Transform>();
         //float distance = GetDistanceFromPlayer();
+        //if(GetDistanceFromPlayer() > 1f){
+            transform.position = Vector3.MoveTowards(transform.position, player.position, moveSpeed * Time.deltaTime);
+        //}
         
-        transform.position = Vector3.MoveTowards(transform.position, player.position, moveSpeed * Time.deltaTime);
         ChangeState(State.Chase, EnemyAni.WALK);
         //float x = Mathf.Sin(moveAngle / 180 * Mathf.PI) * 1.5f * Time.deltaTime;
         //float z = Mathf.Cos(moveAngle / 180 * Mathf.PI) * 1.5f * Time.deltaTime;

@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using System;
 using System.Threading.Tasks;
+using UnityEngine.UI;
 public enum PlayerState { Idle = 0, Move }
 public enum PlayerStateAttack {None = 0, Attack}
 
@@ -51,8 +52,9 @@ public class PlayerController : MonoBehaviour
     private long Timer;
     private float ConnectionTimer = 0;
     private long sampleTimer;
-
+    private float hp = 100f;
     private GameObject[] Hit_Enemy;
+    private bool flag = true;
     #endregion
 
     private void Awake(){
@@ -76,6 +78,7 @@ public class PlayerController : MonoBehaviour
         charaPos.angle_y = transform.eulerAngles.y;
         charaPos.angle_z = transform.eulerAngles.z;
         NetworkManager = GameObject.Find("NetworkManager").GetComponent<Network_Login>();
+        
         StartCoroutine(CheckMove());
     }
 
@@ -90,6 +93,7 @@ public class PlayerController : MonoBehaviour
         //ObjectDetector(); //마우스 클릭으로 오브젝트 검출
         MoveCharacter();
         SimpleFSM(); //플레이어의 상태(PlayerState)에 따라 행동 [Idle, Move, Etc..]
+        SetHP();
     }
 
     private void MoveCharacter()
@@ -99,6 +103,15 @@ public class PlayerController : MonoBehaviour
         transform.position += moveDirection * Time.deltaTime;
         //transform.rotation = Quaternion.Euler(new Vector3(0, charaPos.angle_y, 0) * Time.deltaTime);
         transform.Rotate(new Vector3(0, charaPos.angle_y, 0) * Time.deltaTime);
+    }
+
+    private void SetHP()
+    {
+        Slider Slider = GameObject.Find("HPBar").GetComponent<Slider>();
+        if(Slider && flag){
+            Slider.value = 1f;
+            flag = false;
+        }
     }
 
     private void GetKey()

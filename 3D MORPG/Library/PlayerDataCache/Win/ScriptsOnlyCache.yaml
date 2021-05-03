@@ -36,6 +36,7 @@ ScriptsOnlyBuild:
     - UnityEngine.UI.Mask
     - UnityEngine.UI.ScrollRect
     - UnityEngine.UI.Scrollbar
+    - UnityEngine.UI.Slider
     - UnityEngine.UI.Text
     - UnityEngine.UI.VerticalLayoutGroup
   sceneClasses:
@@ -179,6 +180,8 @@ ScriptsOnlyBuild:
       Script: {instanceID: 1754}
     - Class: 114
       Script: {instanceID: 1922}
+    - Class: 114
+      Script: {instanceID: 1932}
     - Class: 114
       Script: {instanceID: 2364}
     - Class: 114
@@ -730,4 +733,4 @@ ScriptsOnlyBuild:
   scenePathNames:
   - Assets/Scenes/LoginScene.unity
   - Assets/Scenes/SampleScene.unity
-  playerPath: C:/Users/Oh/Desktop/sample/3D MORPG.exe
+  playerPath: C:/Users/Oh/Desktop/sample2/3D MORPG.exe
