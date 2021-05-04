@@ -170,7 +170,7 @@ MonoBehaviour:
   speed: 3
   PlayerPrefab: {fileID: 2052716251097246508, guid: 4a6eb057221099d4e893485f37176a21, type: 3}
   PlayerPrefab2: {fileID: 6573083590682111246, guid: 8da768836b87bd34b9367ed172f80564, type: 3}
-  EnemyPrefab: {fileID: 6255367832418061112, guid: 8a4e066c86a50f3499b6f385ee7e23c9, type: 3}
+  EnemyPrefab: {fileID: 5391643836015276391, guid: 23a4e9fde1551764d91f3bc25a8abb81, type: 3}
   PlayerName: 
 --- !u!114 &129355938
 MonoBehaviour:

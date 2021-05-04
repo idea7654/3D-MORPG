@@ -125,6 +125,10 @@ ScriptsOnlyBuild:
       Script: {instanceID: 0}
     - Class: 196
       Script: {instanceID: 0}
+    - Class: 198
+      Script: {instanceID: 0}
+    - Class: 199
+      Script: {instanceID: 0}
     - Class: 213
       Script: {instanceID: 0}
     - Class: 222
@@ -533,7 +537,7 @@ ScriptsOnlyBuild:
     className: TMP_Settings
   - hash:
       serializedVersion: 2
-      Hash: e01aad9d67f6fbc4fb98817d7e09229f
+      Hash: cd0e25cd7173abc2ee3790629f66ad5c
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: EnemyFSM
@@ -733,4 +737,4 @@ ScriptsOnlyBuild:
   scenePathNames:
   - Assets/Scenes/LoginScene.unity
   - Assets/Scenes/SampleScene.unity
-  playerPath: C:/Users/Oh/Desktop/sample2/3D MORPG.exe
+  playerPath: C:/Users/Oh/Desktop/sample/3D MORPG.exe

@@ -236,6 +236,9 @@ public class Network_Login : MonoBehaviour
                 case "EnemyDie":
                     EnemyDie(b);
                     break;
+                case "PlayerAttackToEnemy":
+                    EnemyEffect(b);
+                    break;
                 default:
                     break;
             }
@@ -260,6 +263,14 @@ public class Network_Login : MonoBehaviour
         }
         //target.transform.rotation = Quaternion.Euler(new Vector3(0, player.angle_y, 0));
         DeadReckoning(player);
+    }
+
+    void EnemyEffect(string b)
+    {
+        EnemyPacket enemyPacket = JsonUtility.FromJson<EnemyPacket>(b);
+        GameObject Enemy = GameObject.Find(enemyPacket.id);
+        
+        Enemy.GetComponent<EnemyFSM>().ShowHitEffect();
     }
 
     void EnemyDie(string b)
@@ -431,6 +442,8 @@ public class Network_Login : MonoBehaviour
         obj.transform.Rotate(new Vector3(0, angle_y, 0));
         obj.name = nickname;
         PlayerName = nickname;
+        //CameraController camera = GameObject.Find("Main Camera").GetComponent<CameraController>();
+        //camera.player = nickname;
         DontDestroyOnLoad(obj);
     }
     public void CreateOtherPlayer(string nickname, Vector3 position, float angle_y){

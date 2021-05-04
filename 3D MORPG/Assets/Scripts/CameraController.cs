@@ -18,6 +18,7 @@ public class CameraController : MonoBehaviour
     private float wheelSpeed = 500.0f; //카메라의 Zoom 속도
     private float x, y;
     private float distance;
+    public string player;
 
     private void Awake()
     {
@@ -30,7 +31,10 @@ public class CameraController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        //target = GameObject.Find(player).transform;
+        Network_Login network = GameObject.Find("NetworkManager").GetComponent<Network_Login>();
+        player = network.PlayerName;
+        transform.SetParent(GameObject.Find(player).transform);
     }
 
     // Update is called once per frame

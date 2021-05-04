@@ -43,6 +43,7 @@ public class EnemyFSM : MonoBehaviour
     public EnemyInfo enemyInfo;
     public Vector3 targetPosition;
     public bool attack = false;
+    public ParticleSystem hitEffect;
     void Start()
     {
         myAni = GetComponent<EnemyAni>();
@@ -59,6 +60,9 @@ public class EnemyFSM : MonoBehaviour
         enemyInfo.z = transform.position.z;
         enemyInfo.angle_y = transform.eulerAngles.y;
         enemyInfo.message = "EnemyAction";
+
+        hitEffect = GameObject.Find("Spark").GetComponent<ParticleSystem>();
+        hitEffect.Stop();
     }
 
     void UpdateState()
@@ -231,6 +235,22 @@ public class EnemyFSM : MonoBehaviour
         if(attack){
             myAni.ChangeAni(EnemyAni.ATTACK);
         }
+    }
+
+    public void ShowHitEffect()
+    {
+        Invoke("Play", 0.5f);
+        Invoke("StopHitEffect", 1.5f);
+    }
+
+    void Play()
+    {
+        hitEffect.Play();
+    }
+
+    void StopHitEffect()
+    {
+        hitEffect.Stop();
     }
 }
 

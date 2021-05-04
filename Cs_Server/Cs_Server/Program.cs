@@ -628,6 +628,13 @@ namespace Cs_Server
                             SendPacket2Server(RemovePacket, t.address, t.port);
                         });
                     }
+                    JObject AttackPacket = new JObject();
+                    AttackPacket.Add("message", "PlayerAttackToEnemy");
+                    AttackPacket.Add("id", i["id"]);
+                    players.ForEach((k) =>
+                    {
+                        SendPacket2Server(AttackPacket, k.address, k.port);
+                    });
                 }
             });
             lock (enemies)
