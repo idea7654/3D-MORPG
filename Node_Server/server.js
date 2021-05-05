@@ -17,6 +17,8 @@ const pub = redis.createClient({
     auth_pass: process.env.REDIS_PASSWORD,
 });
 
+let party = [];
+
 db();
 
 udpServer.on("listening", () => {

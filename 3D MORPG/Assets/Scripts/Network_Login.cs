@@ -66,6 +66,7 @@ public class Network_Login : MonoBehaviour
         public double angle_y;
         public string state;
         public string id;
+        public float PlayerHp;
         public bool attack = false;
     };
     public enum PlayerMove{
@@ -322,7 +323,8 @@ public class Network_Login : MonoBehaviour
         if(enemyPacket.attack){
             if(enemyPacket.target == PlayerName){
                 Slider slider = GameObject.Find("HPBar").GetComponent<Slider>();
-                slider.value -= 10f / 100;
+                slider.value = enemyPacket.PlayerHp / 100;
+                
             }
         }
         //Enemy.transform.position = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));

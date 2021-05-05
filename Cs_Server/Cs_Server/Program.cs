@@ -376,6 +376,7 @@ namespace Cs_Server
         public float angle_y;
         public string move;
         public long currentTime;
+        public float hp = 100;
     } //서버에 접속중인 리스트 클래스
     public class NetWork
     {
@@ -401,7 +402,8 @@ namespace Cs_Server
         private static int id = 1;
         private double whileTimer = 0;
         long timerasdf = 0;
-
+        public List<Address[]> PartyList = new List<Address[]>();
+        public List<Address> PartyElement = new List<Address>();    
         public void Start()
         {
             sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -585,6 +587,9 @@ namespace Cs_Server
                 }else if(player["message"].ToString() == "Attack")
                 {
                     CheckAttack(player);
+                }else if(player["message"].ToString() == "CreateParty")
+                {
+                    //players.find
                 }
                 else
                 {
@@ -852,6 +857,7 @@ namespace Cs_Server
             if (DateTimeOffset.Now.ToUnixTimeMilliseconds() - ChaseTimer > 400)
             {
                 double direction = Math.Atan2(diffX, diffZ);
+                
                 enemy["angle_y"] = direction * 180 / Math.PI;
                 JObject AttackObject = new JObject();
                 //JObject TargetObject = JObject.FromObject(player);
@@ -863,6 +869,7 @@ namespace Cs_Server
                 enemy["state"] = "Attack";
                 AttackObject.Add("state", enemy["state"]);
                 AttackObject.Add("id", enemy["id"]);
+                AttackObject.Add("PlayerHp", player.hp);
                 players.ForEach((i) =>
                 {
                     SendPacket2Server(AttackObject, i.address, i.port);
@@ -871,6 +878,8 @@ namespace Cs_Server
                 if(DateTimeOffset.Now.ToUnixTimeMilliseconds() - AttackDelay > 2000)
                 {
                     AttackObject.Add("attack", true);
+                    player.hp -= 10;
+                    AttackObject["PlayerHp"] = player.hp;
                     players.ForEach((i) =>
                     {
                         SendPacket2Server(AttackObject, i.address, i.port);

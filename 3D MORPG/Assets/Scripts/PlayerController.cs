@@ -52,7 +52,7 @@ public class PlayerController : MonoBehaviour
     private long Timer;
     private float ConnectionTimer = 0;
     private long sampleTimer;
-    private float hp = 100f;
+    //private float hp = 100f;
     private GameObject[] Hit_Enemy;
     private bool flag = true;
     #endregion
