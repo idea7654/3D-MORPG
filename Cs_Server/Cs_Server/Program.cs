@@ -377,7 +377,9 @@ namespace Cs_Server
         public string move;
         public long currentTime;
         public float hp = 100;
+        public bool isPartyLeader = false;
     } //서버에 접속중인 리스트 클래스
+    
     public class NetWork
     {
         byte[] recvByte = new byte[512];
@@ -403,7 +405,7 @@ namespace Cs_Server
         private double whileTimer = 0;
         long timerasdf = 0;
         public List<Address[]> PartyList = new List<Address[]>();
-        public List<Address> PartyElement = new List<Address>();    
+        //public List<PartyMember> PartyElement = new List<PartyMember>();    
         public void Start()
         {
             sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -589,7 +591,24 @@ namespace Cs_Server
                     CheckAttack(player);
                 }else if(player["message"].ToString() == "CreateParty")
                 {
-                    //players.find
+                   // PartyMember newMember = new PartyMember();
+                   // newMember.nickname = player["targetName"].ToString();
+                    //PartyMember Leader = new PartyMember();
+                    //Leader.nickname = player["playerName"].ToString();
+                    //Leader.isPartyLeader = true;
+                    //PartyMember[] newParty = new PartyMember[] { };
+                    //newParty = newParty.Concat(new PartyMember[] { newMember }).ToArray();
+                    //newParty = newParty.Concat(new PartyMember[] { Leader }).ToArray();
+                    //PartyList.Add(newParty);
+
+                    Address targetPlayer = players.Find((i) => i.nickname == player["targetName"].ToString());
+                    Address LeaderPlayer = players.Find((i) => i.nickname == player["playerName"].ToString());
+                    LeaderPlayer.isPartyLeader = true;
+                    Address[] newParty = new Address[] { };
+                    newParty = newParty.Concat(new Address[] { targetPlayer }).ToArray();
+                    newParty = newParty.Concat(new Address[] { LeaderPlayer }).ToArray();
+                    PartyList.Add(newParty);
+                    MakePartyToClient(targetPlayer, LeaderPlayer);
                 }
                 else
                 {
@@ -601,6 +620,18 @@ namespace Cs_Server
             catch(Exception ex)
             {
                 Console.WriteLine(ex);
+            }
+        }
+
+        private void MakePartyToClient(Address target, Address leader)
+        {
+            JObject newParty = new JObject();
+            newParty.Add("message", "CreateParty");
+            newParty.Add("leader", leader.nickname);
+            newParty.Add("member", target.nickname);
+            for(int i = 0; i < PartyList[PartyList.Count - 1].Length; i++)
+            {
+                SendPacket2Server(newParty, PartyList[PartyList.Count - 1][i].address, PartyList[PartyList.Count - 1][i].port);
             }
         }
 

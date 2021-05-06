@@ -69,6 +69,12 @@ public class Network_Login : MonoBehaviour
         public float PlayerHp;
         public bool attack = false;
     };
+
+    public class PartyPacket{
+        public string member;
+        public string leader;
+        public string message;
+    }
     public enum PlayerMove{
         stop = 0,
         turn_left = 1,
@@ -84,6 +90,8 @@ public class Network_Login : MonoBehaviour
     public GameObject PlayerPrefab;
     public GameObject PlayerPrefab2;
     public GameObject EnemyPrefab;
+    public bool isLeader = false;
+    public bool isInParty = false;
 
     #endregion
     // Start is called before the first frame update
@@ -240,6 +248,9 @@ public class Network_Login : MonoBehaviour
                 case "PlayerAttackToEnemy":
                     EnemyEffect(b);
                     break;
+                case "CreateParty":
+                    CreateParty(b);
+                    break;
                 default:
                     break;
             }
@@ -264,6 +275,11 @@ public class Network_Login : MonoBehaviour
         }
         //target.transform.rotation = Quaternion.Euler(new Vector3(0, player.angle_y, 0));
         DeadReckoning(player);
+    }
+
+    void CreateParty(string b){
+        PartyPacket partyPacket = JsonUtility.FromJson<PartyPacket>(b);
+        //여기서 파티창 보이게 하고 멤버만 추가!!!
     }
 
     void EnemyEffect(string b)

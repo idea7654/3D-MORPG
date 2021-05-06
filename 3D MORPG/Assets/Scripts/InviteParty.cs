@@ -8,18 +8,19 @@ public class InviteParty : MonoBehaviour
     private Button button;
     private class Party{
         public string targetName;
-        public float targetHP;
         public string playerName;
-        public float playerHP;
+        public string message;
     }
     private Party PartyPacket;
     private Slider slider;
+    private Network_Login NetworkManager;
     void Start()
     {
         button = gameObject.GetComponent<Button>();
         button.onClick.AddListener(InviteToParty);
         PartyPacket = new Party();
         slider = GameObject.Find("HPBar").GetComponent<Slider>();
+        NetworkManager = GameObject.Find("NetworkManager").GetComponent<Network_Login>();
     }
 
     // Update is called once per frame
@@ -34,6 +35,7 @@ public class InviteParty : MonoBehaviour
         string playerName = GameObject.Find("NetworkManager").GetComponent<Network_Login>().PlayerName;
         PartyPacket.targetName = targetName;
         PartyPacket.playerName = playerName;
-        PartyPacket.targetHP = slider.value;
+        PartyPacket.message = "CreateParty";
+        NetworkManager.SendPacket2CsServer(PartyPacket);
     }
 }
