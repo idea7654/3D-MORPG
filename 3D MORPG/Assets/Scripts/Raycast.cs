@@ -5,10 +5,11 @@ using UnityEngine.UI;
 public class Raycast : MonoBehaviour
 {
     private GameObject target;
+    private Network_Login networkManager;
     // Start is called before the first frame update
     void Start()
     {
-        
+        networkManager = GameObject.Find("NetworkManager").GetComponent<Network_Login>();
     }
 
     // Update is called once per frame
@@ -24,6 +25,9 @@ public class Raycast : MonoBehaviour
                     GameObject.Find("InfoCanvas").transform.FindChild("InfoPanel").gameObject.SetActive(true);
                     Text text = GameObject.Find("Name").GetComponent<Text>();
                     text.text = hit.transform.gameObject.name;
+                    if(networkManager.isInParty && !networkManager.isLeader){
+                        GameObject.Find("InfoPanel").transform.FindChild("PartyButton").gameObject.SetActive(false);
+                    }
                 }//else{
                     //GameObject.Find("InfoCanvas").transform.FindChild("InfoPanel").gameObject.SetActive(false);
                 //}

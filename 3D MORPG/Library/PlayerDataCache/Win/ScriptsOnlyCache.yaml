@@ -84,37 +84,37 @@ ScriptsOnlyBuild:
     - Class: 114
       Script: {instanceID: 1662}
     - Class: 114
-      Script: {instanceID: 1818}
+      Script: {instanceID: 1826}
     - Class: 114
-      Script: {instanceID: 1850}
+      Script: {instanceID: 1858}
     - Class: 114
-      Script: {instanceID: 1900}
+      Script: {instanceID: 1908}
     - Class: 114
-      Script: {instanceID: 2076}
+      Script: {instanceID: 2084}
     - Class: 114
-      Script: {instanceID: 2364}
+      Script: {instanceID: 2372}
     - Class: 114
-      Script: {instanceID: 2458}
+      Script: {instanceID: 2466}
     - Class: 114
-      Script: {instanceID: 2878}
+      Script: {instanceID: 2886}
     - Class: 114
-      Script: {instanceID: 2978}
+      Script: {instanceID: 2986}
     - Class: 114
-      Script: {instanceID: 3052}
+      Script: {instanceID: 3060}
     - Class: 114
-      Script: {instanceID: 3068}
+      Script: {instanceID: 3070}
     - Class: 114
-      Script: {instanceID: 3264}
+      Script: {instanceID: 3266}
     - Class: 114
-      Script: {instanceID: 3298}
+      Script: {instanceID: 3300}
     - Class: 114
-      Script: {instanceID: 3368}
+      Script: {instanceID: 3370}
     - Class: 114
-      Script: {instanceID: 3620}
+      Script: {instanceID: 3622}
     - Class: 114
-      Script: {instanceID: 3682}
+      Script: {instanceID: 3684}
     - Class: 114
-      Script: {instanceID: 3758}
+      Script: {instanceID: 3760}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 128
@@ -183,43 +183,43 @@ ScriptsOnlyBuild:
     - Class: 114
       Script: {instanceID: 1662}
     - Class: 114
-      Script: {instanceID: 1754}
+      Script: {instanceID: 1762}
     - Class: 114
-      Script: {instanceID: 1922}
+      Script: {instanceID: 1930}
     - Class: 114
-      Script: {instanceID: 1932}
+      Script: {instanceID: 1940}
     - Class: 114
-      Script: {instanceID: 2364}
+      Script: {instanceID: 2372}
     - Class: 114
-      Script: {instanceID: 2438}
+      Script: {instanceID: 2446}
     - Class: 114
-      Script: {instanceID: 2458}
+      Script: {instanceID: 2466}
     - Class: 114
-      Script: {instanceID: 2604}
+      Script: {instanceID: 2612}
     - Class: 114
-      Script: {instanceID: 2796}
+      Script: {instanceID: 2804}
     - Class: 114
-      Script: {instanceID: 2878}
+      Script: {instanceID: 2886}
     - Class: 114
-      Script: {instanceID: 2968}
+      Script: {instanceID: 2976}
     - Class: 114
-      Script: {instanceID: 3068}
+      Script: {instanceID: 3070}
     - Class: 114
-      Script: {instanceID: 3264}
+      Script: {instanceID: 3266}
     - Class: 114
-      Script: {instanceID: 3298}
+      Script: {instanceID: 3300}
     - Class: 114
-      Script: {instanceID: 3368}
+      Script: {instanceID: 3370}
     - Class: 114
-      Script: {instanceID: 3436}
+      Script: {instanceID: 3438}
     - Class: 114
-      Script: {instanceID: 3550}
+      Script: {instanceID: 3552}
     - Class: 114
-      Script: {instanceID: 3620}
+      Script: {instanceID: 3622}
     - Class: 114
-      Script: {instanceID: 3634}
+      Script: {instanceID: 3636}
     - Class: 114
-      Script: {instanceID: 3758}
+      Script: {instanceID: 3760}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 128
@@ -563,7 +563,7 @@ ScriptsOnlyBuild:
     className: AspectRatioFitter
   - hash:
       serializedVersion: 2
-      Hash: c49f474b7660f01108c606689a2f8d9b
+      Hash: 2d4b3cb326b6111faacb53932241654b
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: Network_Login
@@ -757,4 +757,4 @@ ScriptsOnlyBuild:
   scenePathNames:
   - Assets/Scenes/LoginScene.unity
   - Assets/Scenes/SampleScene.unity
-  playerPath: C:/Users/Oh/Desktop/sample/3D MORPG.exe
+  playerPath: C:/Users/Oh/Desktop/sample2/3D MORPG.exe

@@ -21,6 +21,9 @@ public class InviteParty : MonoBehaviour
         PartyPacket = new Party();
         slider = GameObject.Find("HPBar").GetComponent<Slider>();
         NetworkManager = GameObject.Find("NetworkManager").GetComponent<Network_Login>();
+        // if(NetworkManager.isInParty && !NetworkManager.isLeader){
+        //     transform.SetActive(false);
+        // }
     }
 
     // Update is called once per frame
@@ -35,7 +38,12 @@ public class InviteParty : MonoBehaviour
         string playerName = GameObject.Find("NetworkManager").GetComponent<Network_Login>().PlayerName;
         PartyPacket.targetName = targetName;
         PartyPacket.playerName = playerName;
-        PartyPacket.message = "CreateParty";
+        // PartyPacket.message = "CreateParty";
+        if(NetworkManager.isInParty){
+            PartyPacket.message = "AddMember";
+        }else{
+            PartyPacket.message = "CreateParty";
+        }
         NetworkManager.SendPacket2CsServer(PartyPacket);
     }
 }
