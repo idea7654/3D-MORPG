@@ -69,14 +69,18 @@ public class Network_Login : MonoBehaviour
         public float PlayerHp;
         public bool attack = false;
     };
+    [Serializable]
     public class MemberList{
         public string nickname;
+        public float hp;
     }
+    [Serializable]
     public class PartyPacket{
         public string member;
         public string leader;
         public string message;
         public float memberHP;
+        public float leaderHP;
         public MemberList[] memberList;
     }
 
@@ -263,6 +267,9 @@ public class Network_Login : MonoBehaviour
                 case "AddedParty":
                     AddedParty(b);
                     break;
+                case "ArriveParty":
+                    ArriveParty(b);
+                    break;
                 default:
                     break;
             }
@@ -291,10 +298,50 @@ public class Network_Login : MonoBehaviour
 
     void AddedParty(string b){
         PartyPacket partyPacket = JsonUtility.FromJson<PartyPacket>(b);
-        
+        GameObject PartyCanvas = GameObject.Find("PartyCanvas");
+        PartyCanvas.transform.FindChild("PartyPanel").gameObject.SetActive(true);
+        for(int i = 1; i < partyPacket.memberList.Length; i++){
+            PartyCanvas.transform.FindChild("PartyPanel").transform.FindChild("User" + i.ToString()).gameObject.SetActive(true);
+            Transform member = GameObject.Find("User" + i.ToString()).transform;
+            member.FindChild("HPBar").GetComponent<Slider>().value = partyPacket.memberList[i-1].hp;
+            member.FindChild("Text").GetComponent<Text>().text = partyPacket.memberList[i-1].nickname;
+            PartyMembers.Add(partyPacket.memberList[i-1].nickname);
+        }
+        PartyMembers.Add(partyPacket.memberList[partyPacket.memberList.Length - 1].nickname);
+        isInParty = true;
         //Debug.Log(partyPacket.Length);
-        Debug.Log(partyPacket.memberList.ToString());
-        Debug.Log(partyPacket.memberList[0].ToString());
+        //Debug.Log(partyPacket.memberList.ToString());
+        //Debug.Log(partyPacket.memberList[0].ToString());
+    }
+
+    void ArriveParty(string b){
+        PartyPacket partyPacket = JsonUtility.FromJson<PartyPacket>(b);
+        GameObject PartyCanvas = GameObject.Find("PartyCanvas");
+        string target = partyPacket.member;
+        if(target == PlayerName){
+            PartyMembers = new List<string>();
+            PartyCanvas.transform.FindChild("PartyPanel").gameObject.SetActive(false);
+            isInParty = false;
+        }else{
+            // for(int i = 1; i < PartyMembers.Count; i++){
+            //     PartyCanvas.transform.FindChild("PartyPanel").transform.FindChild("User" + i.ToString()).gameObject.SetActive(false);
+            // }
+            int index = PartyMembers.FindIndex(i => i == target);
+            //PartyMembers[0] = PartyMembers[index];
+            if(index == PartyMembers.Count - 1){
+                PartyCanvas.transform.FindChild("PartyPanel").transform.FindChild("User" + (index + 1).ToString()).gameObject.SetActive(false);
+            }else{
+                for(int i = index; i < PartyMembers.Count - 1; i++){
+                    Transform otherMember = GameObject.Find("User"+((i+1).ToString())).transform;
+                    Slider slider = otherMember.FindChild("HPBar").GetComponent<Slider>();
+                    float hp = slider.value;
+                    Transform member = GameObject.Find("User" + (i.ToString())).transform;
+                    member.FindChild("HPBar").GetComponent<Slider>().value = hp;
+                    member.FindChild("Text").GetComponent<Text>().text = PartyMembers[i - 1];
+                } //여기에러 고치기
+                PartyCanvas.transform.FindChild("PartyPanel").transform.FindChild("User" + (index + 1).ToString()).gameObject.SetActive(false);
+            }
+        }
     }
 
     void CreateParty(string b){
@@ -306,11 +353,16 @@ public class Network_Login : MonoBehaviour
         PartyCanvas.transform.FindChild("PartyPanel").gameObject.SetActive(true);
         PartyCanvas.transform.FindChild("PartyPanel").transform.FindChild("User1").gameObject.SetActive(true);
         Transform member = GameObject.Find("User1").transform;
-        member.FindChild("HPBar").GetComponent<Slider>().value = partyPacket.memberHP;
-        member.FindChild("Text").GetComponent<Text>().text = partyPacket.member;
+        //member.FindChild("HPBar").GetComponent<Slider>().value = partyPacket.memberHP;
+        //member.FindChild("Text").GetComponent<Text>().text = partyPacket.member;
         isInParty = true;
         if(PlayerName == partyPacket.leader){
             isLeader = true;
+            member.FindChild("HPBar").GetComponent<Slider>().value = partyPacket.memberHP;
+            member.FindChild("Text").GetComponent<Text>().text = partyPacket.member;
+        }else{
+            member.FindChild("HPBar").GetComponent<Slider>().value = partyPacket.leaderHP;
+            member.FindChild("Text").GetComponent<Text>().text = partyPacket.leader;
         }
     }
 
@@ -388,7 +440,19 @@ public class Network_Login : MonoBehaviour
             if(enemyPacket.target == PlayerName){
                 Slider slider = GameObject.Find("HPBar").GetComponent<Slider>();
                 slider.value = enemyPacket.PlayerHp / 100;
-                
+            }else{
+                // for(int i = 1; i < PartyMembers.Count; i++){
+                //     Transform member = GameObject.Find("User" + i.ToString()).transform;
+                //     if(member.FindChild("Text").GetComponent<Text>().text == enemyPacket.target){
+                //         member.FindChild("HPBar").GetComponent<Slider>().value = enemyPacket.PlayerHp / 100;
+                //         break;
+                //     }
+                // }
+                if(isInParty){
+                    int index = PartyMembers.FindIndex(i => i == enemyPacket.target);
+                    Transform member = GameObject.Find("User" + (index + 1).ToString()).transform;
+                    member.FindChild("HPBar").GetComponent<Slider>().value = enemyPacket.PlayerHp / 100;
+                }
             }
         }
         //Enemy.transform.position = new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z));

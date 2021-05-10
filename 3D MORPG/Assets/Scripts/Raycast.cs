@@ -25,6 +25,11 @@ public class Raycast : MonoBehaviour
                     GameObject.Find("InfoCanvas").transform.FindChild("InfoPanel").gameObject.SetActive(true);
                     Text text = GameObject.Find("Name").GetComponent<Text>();
                     text.text = hit.transform.gameObject.name;
+                    if(hit.transform.gameObject.name == networkManager.PlayerName){
+                        GameObject.Find("InfoPanel").transform.FindChild("PartyButton").gameObject.SetActive(false);
+                    }else{
+                        GameObject.Find("InfoPanel").transform.FindChild("PartyButton").gameObject.SetActive(true);
+                    }
                     if(networkManager.isInParty && !networkManager.isLeader){
                         GameObject.Find("InfoPanel").transform.FindChild("PartyButton").gameObject.SetActive(false);
                     }

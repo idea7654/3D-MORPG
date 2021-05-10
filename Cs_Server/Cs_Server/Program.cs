@@ -609,27 +609,58 @@ namespace Cs_Server
                         {
                             if (PartyList[i][j].Equals(LeaderPlayer))
                             {
-                                PartyList[i] = PartyList[i].Concat(new Address[] { targetPlayer }).ToArray();
-                                JObject AddMemberPacket = new JObject();
-                                AddMemberPacket.Add("message", "AddMember");
-                                AddMemberPacket.Add("member", targetPlayer.nickname);
+                                if(PartyList[i].Count() < 5)
+                                {
+                                    PartyList[i] = PartyList[i].Concat(new Address[] { targetPlayer }).ToArray();
+                                    JObject AddMemberPacket = new JObject();
+                                    AddMemberPacket.Add("message", "AddMember");
+                                    AddMemberPacket.Add("member", targetPlayer.nickname);
+                                    AddMemberPacket.Add("memberHP", targetPlayer.hp);
+                                    for (int k = 0; k < PartyList[i].Count(); k++)
+                                    {
+                                        if (PartyList[i][k].Equals(targetPlayer))
+                                        {
+                                            //PartyList[i]를 담아 보냄
+                                            //AddMemberPacket.Add("MemberList", );
+                                            JArray MemberArr = GetPartyList(PartyList[i]);
+                                            AddMemberPacket["message"] = "AddedParty";
+                                            AddMemberPacket.Add("memberList", MemberArr);
+                                            Console.WriteLine(AddMemberPacket.ToString());
+                                            SendPacket2Server(AddMemberPacket, PartyList[i][k].address, PartyList[i][k].port);
+                                        }
+                                        else
+                                        {
+                                            SendPacket2Server(AddMemberPacket, PartyList[i][k].address, PartyList[i][k].port);
+                                        }
+                                    }
+                                    break;
+                                }
+                                else
+                                {
+                                    Console.WriteLine("비정상적인 패킷");
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (player["message"].ToString() == "ArriveParty")
+                {
+                    Address playerName = players.Find((i) => i.nickname == player["playerName"].ToString());
+                    for(int i = 0; i < PartyList.Count; i++)
+                    {
+                        for (int j = 0; j < PartyList[i].Count(); j++)
+                        {
+                            if (PartyList[i][j].nickname == player["playerName"].ToString())
+                            {
+                                PartyList[i] = PartyList[i].Where(var => var.nickname != player["playerName"].ToString()).ToArray();
+                                JObject ArrivePacket = new JObject();
+                                ArrivePacket.Add("message", "ArriveParty");
+                                ArrivePacket.Add("member", player["playerName"].ToString());
                                 for (int k = 0; k < PartyList[i].Count(); k++)
                                 {
-                                    if (PartyList[i][k].Equals(targetPlayer))
-                                    {
-                                        //PartyList[i]를 담아 보냄
-                                        //AddMemberPacket.Add("MemberList", );
-                                        JArray MemberArr = GetPartyList(PartyList[i]);
-                                        AddMemberPacket["message"] = "AddedParty";
-                                        AddMemberPacket.Add("memberList", MemberArr);
-                                        Console.WriteLine(AddMemberPacket.ToString());
-                                        SendPacket2Server(AddMemberPacket, PartyList[i][k].address, PartyList[i][k].port);
-                                    }
-                                    else
-                                    {
-                                        SendPacket2Server(AddMemberPacket, PartyList[i][k].address, PartyList[i][k].port);
-                                    }
+                                    SendPacket2Server(ArrivePacket, PartyList[i][k].address, PartyList[i][k].port);
                                 }
+                                SendPacket2Server(ArrivePacket, playerName.address, playerName.port);
                                 break;
                             }
                         }
@@ -656,6 +687,7 @@ namespace Cs_Server
             {
                 JObject newObject = new JObject();
                 newObject.Add("nickname", PartyList[i].nickname);
+                newObject.Add("hp", PartyList[i].hp);
                 PartyMembers.Add(newObject);
             }
             return PartyMembers;
@@ -668,6 +700,7 @@ namespace Cs_Server
             newParty.Add("leader", leader.nickname);
             newParty.Add("member", target.nickname);
             newParty.Add("memberHP", target.hp);
+            newParty.Add("leaderHP", leader.hp);
             for(int i = 0; i < PartyList[PartyList.Count - 1].Length; i++)
             {
                 SendPacket2Server(newParty, PartyList[PartyList.Count - 1][i].address, PartyList[PartyList.Count - 1][i].port);
