@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.IO;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.Linq;
 [Serializable]
 public class Network_Login : MonoBehaviour
 {
@@ -102,7 +103,7 @@ public class Network_Login : MonoBehaviour
     public bool isLeader = false;
     public bool isInParty = false;
 
-    public List<string> PartyMembers = new List<string>();
+    public List<MemberList> PartyMembers = new List<MemberList>();
     #endregion
     // Start is called before the first frame update
     public string PlayerName;
@@ -247,7 +248,6 @@ public class Network_Login : MonoBehaviour
                     break;
                 case "Attack":
                     EnemyAI_Attack(b);
-                //case "AttackAction":
                     break;
                 case "EnemyIdle":
                     EnemyAI_ToIdle(b);
@@ -269,6 +269,9 @@ public class Network_Login : MonoBehaviour
                     break;
                 case "ArriveParty":
                     ArriveParty(b);
+                    break;
+                case "AlreadyInParty":
+                    AlreadyInParty(connectPlayer);
                     break;
                 default:
                     break;
@@ -292,8 +295,11 @@ public class Network_Login : MonoBehaviour
         }else{
             switchMove(player, target);
         }
-        //target.transform.rotation = Quaternion.Euler(new Vector3(0, player.angle_y, 0));
         DeadReckoning(player);
+    }
+
+    void AlreadyInParty(Player player){
+        GameObject.Find("AlertCanvas").transform.FindChild("InPartyPanel").gameObject.SetActive(true);
     }
 
     void AddedParty(string b){
@@ -303,15 +309,11 @@ public class Network_Login : MonoBehaviour
         for(int i = 1; i < partyPacket.memberList.Length; i++){
             PartyCanvas.transform.FindChild("PartyPanel").transform.FindChild("User" + i.ToString()).gameObject.SetActive(true);
             Transform member = GameObject.Find("User" + i.ToString()).transform;
-            member.FindChild("HPBar").GetComponent<Slider>().value = partyPacket.memberList[i-1].hp;
+            member.FindChild("HPBar").GetComponent<Slider>().value = partyPacket.memberList[i-1].hp / 100;
             member.FindChild("Text").GetComponent<Text>().text = partyPacket.memberList[i-1].nickname;
-            PartyMembers.Add(partyPacket.memberList[i-1].nickname);
+            PartyMembers.Add(partyPacket.memberList[i-1]);
         }
-        PartyMembers.Add(partyPacket.memberList[partyPacket.memberList.Length - 1].nickname);
         isInParty = true;
-        //Debug.Log(partyPacket.Length);
-        //Debug.Log(partyPacket.memberList.ToString());
-        //Debug.Log(partyPacket.memberList[0].ToString());
     }
 
     void ArriveParty(string b){
@@ -319,66 +321,61 @@ public class Network_Login : MonoBehaviour
         GameObject PartyCanvas = GameObject.Find("PartyCanvas");
         string target = partyPacket.member;
         if(target == PlayerName){
-            PartyMembers = new List<string>();
+            PartyMembers = new List<MemberList>();
             PartyCanvas.transform.FindChild("PartyPanel").gameObject.SetActive(false);
             isInParty = false;
         }else{
-            // for(int i = 1; i < PartyMembers.Count; i++){
-            //     PartyCanvas.transform.FindChild("PartyPanel").transform.FindChild("User" + i.ToString()).gameObject.SetActive(false);
-            // }
-            int index = PartyMembers.FindIndex(i => i == target);
-            //PartyMembers[0] = PartyMembers[index];
-            if(index == PartyMembers.Count - 1){
-                PartyCanvas.transform.FindChild("PartyPanel").transform.FindChild("User" + (index + 1).ToString()).gameObject.SetActive(false);
-            }else{
-                for(int i = index; i < PartyMembers.Count - 1; i++){
-                    Transform otherMember = GameObject.Find("User"+((i+1).ToString())).transform;
-                    Slider slider = otherMember.FindChild("HPBar").GetComponent<Slider>();
-                    float hp = slider.value;
-                    Transform member = GameObject.Find("User" + (i.ToString())).transform;
-                    member.FindChild("HPBar").GetComponent<Slider>().value = hp;
-                    member.FindChild("Text").GetComponent<Text>().text = PartyMembers[i - 1];
-                } //여기에러 고치기
-                PartyCanvas.transform.FindChild("PartyPanel").transform.FindChild("User" + (index + 1).ToString()).gameObject.SetActive(false);
+            PartyMembers = new List<MemberList>();
+            PartyMembers.AddRange(partyPacket.memberList);
+            PartyMembers.RemoveAll(i => i.nickname == PlayerName);
+            for(int i = 0; i < PartyMembers.Count; i++){
+                Transform member = GameObject.Find("User" + (i + 1).ToString()).transform;
+                member.FindChild("HPBar").GetComponent<Slider>().value = PartyMembers[i].hp / 100;
+                member.FindChild("Text").GetComponent<Text>().text = PartyMembers[i].nickname;
             }
+            PartyCanvas.transform.FindChild("PartyPanel").transform.FindChild("User" + (PartyMembers.Count + 1).ToString()).gameObject.SetActive(false);
         }
     }
 
     void CreateParty(string b){
         PartyPacket partyPacket = JsonUtility.FromJson<PartyPacket>(b);
         //여기서 파티창 보이게 하고 멤버만 추가!!!
-        PartyMembers.Add(partyPacket.leader);
-        PartyMembers.Add(partyPacket.member);
         GameObject PartyCanvas = GameObject.Find("PartyCanvas");
         PartyCanvas.transform.FindChild("PartyPanel").gameObject.SetActive(true);
         PartyCanvas.transform.FindChild("PartyPanel").transform.FindChild("User1").gameObject.SetActive(true);
         Transform member = GameObject.Find("User1").transform;
-        //member.FindChild("HPBar").GetComponent<Slider>().value = partyPacket.memberHP;
-        //member.FindChild("Text").GetComponent<Text>().text = partyPacket.member;
         isInParty = true;
         if(PlayerName == partyPacket.leader){
             isLeader = true;
-            member.FindChild("HPBar").GetComponent<Slider>().value = partyPacket.memberHP;
+            member.FindChild("HPBar").GetComponent<Slider>().value = partyPacket.memberHP / 100;
             member.FindChild("Text").GetComponent<Text>().text = partyPacket.member;
+            MemberList memberList = new MemberList();
+            memberList.nickname = partyPacket.member;
+            memberList.hp = partyPacket.memberHP;
+            PartyMembers.Add(memberList);
         }else{
-            member.FindChild("HPBar").GetComponent<Slider>().value = partyPacket.leaderHP;
+            member.FindChild("HPBar").GetComponent<Slider>().value = partyPacket.leaderHP / 100;
             member.FindChild("Text").GetComponent<Text>().text = partyPacket.leader;
+            MemberList leaderList = new MemberList();
+            leaderList.nickname = partyPacket.leader;
+            leaderList.hp = partyPacket.leaderHP;
+            PartyMembers.Add(leaderList);
         }
     }
 
     void AddPartyMember(string b){
         PartyPacket partyPacket = JsonUtility.FromJson<PartyPacket>(b);
         GameObject PartyPanel = GameObject.Find("PartyPanel");
-        PartyMembers.Add(partyPacket.member);
-        //PartyPanel.transform.FindChild("User" + PartyMembers.Length.ToString()).gameObject.SetActive(true);
+        MemberList memberList = new MemberList();
+        memberList.nickname = partyPacket.member;
+        memberList.hp = partyPacket.memberHP;
+        PartyMembers.Add(memberList);
 
-        for(int i = 1; i < PartyMembers.Count; i++){
+        for(int i = 1; i < PartyMembers.Count + 1; i++){
             PartyPanel.transform.FindChild("User" + i.ToString()).gameObject.SetActive(true);
         }
-        //PartyMembers.Add(partyPacket.member);
-        Transform member = GameObject.Find("User" + (PartyMembers.Count - 1).ToString()).transform;
-        PartyMembers.Add(partyPacket.member);
-        member.FindChild("HPBar").GetComponent<Slider>().value = partyPacket.memberHP;
+        Transform member = GameObject.Find("User" + (PartyMembers.Count).ToString()).transform;
+        member.FindChild("HPBar").GetComponent<Slider>().value = partyPacket.memberHP / 100;
         member.FindChild("Text").GetComponent<Text>().text = partyPacket.member;
     }
 
@@ -449,9 +446,16 @@ public class Network_Login : MonoBehaviour
                 //     }
                 // }
                 if(isInParty){
-                    int index = PartyMembers.FindIndex(i => i == enemyPacket.target);
-                    Transform member = GameObject.Find("User" + (index + 1).ToString()).transform;
-                    member.FindChild("HPBar").GetComponent<Slider>().value = enemyPacket.PlayerHp / 100;
+                    // int index = PartyMembers.FindIndex(i => i == enemyPacket.target);
+                    // Transform member = GameObject.Find("User" + (index + 1).ToString()).transform;
+                    // member.FindChild("HPBar").GetComponent<Slider>().value = enemyPacket.PlayerHp / 100;
+                    for(int i = 1; i < PartyMembers.Count + 1; i++){
+                        Transform member = GameObject.Find("User" + i.ToString()).transform;
+                        if(member.FindChild("Text").GetComponent<Text>().text == enemyPacket.target){
+                            member.FindChild("HPBar").GetComponent<Slider>().value = enemyPacket.PlayerHp / 100;
+                            break;
+                        }
+                    }
                 }
             }
         }

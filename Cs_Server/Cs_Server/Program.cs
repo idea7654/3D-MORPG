@@ -591,53 +591,74 @@ namespace Cs_Server
                     CheckAttack(player);
                 }else if(player["message"].ToString() == "CreateParty")
                 {
-                    Address targetPlayer = players.Find((i) => i.nickname == player["targetName"].ToString());
-                    Address LeaderPlayer = players.Find((i) => i.nickname == player["playerName"].ToString());
-                    LeaderPlayer.isPartyLeader = true;
-                    Address[] newParty = new Address[] { };
-                    newParty = newParty.Concat(new Address[] { targetPlayer }).ToArray();
-                    newParty = newParty.Concat(new Address[] { LeaderPlayer }).ToArray();
-                    PartyList.Add(newParty);
-                    MakePartyToClient(targetPlayer, LeaderPlayer);
+                    var targetPlayer = players.Find((i) => i.nickname == player["targetName"].ToString());
+                    var LeaderPlayer = players.Find((i) => i.nickname == player["playerName"].ToString());
+                    bool IsInParty = CheckInParty(targetPlayer);
+                    if (IsInParty)
+                    {
+                        JObject ErrorPacket = new JObject();
+                        ErrorPacket.Add("message", "AlreadyInParty");
+                        SendPacket2Server(ErrorPacket, LeaderPlayer.address, LeaderPlayer.port);
+                    }
+                    else
+                    {
+                        LeaderPlayer.isPartyLeader = true;
+                        Address[] newParty = new Address[] { };
+                        newParty = newParty.Concat(new Address[] { targetPlayer }).ToArray();
+                        newParty = newParty.Concat(new Address[] { LeaderPlayer }).ToArray();
+                        PartyList.Add(newParty);
+                        MakePartyToClient(targetPlayer, LeaderPlayer);
+                    }
                 }else if(player["message"].ToString() == "AddMember")
                 {
-                    Address targetPlayer = players.Find((i) => i.nickname == player["targetName"].ToString());
-                    Address LeaderPlayer = players.Find((i) => i.nickname == player["playerName"].ToString());
-                    for(int i = 0; i < PartyList.Count; i++)
+                    var targetPlayer = players.Find((i) => i.nickname == player["targetName"].ToString());
+                    var LeaderPlayer = players.Find((i) => i.nickname == player["playerName"].ToString());
+                    Console.WriteLine(targetPlayer.hp);
+                    bool IsInParty = CheckInParty(targetPlayer);
+                    if (IsInParty)
                     {
-                        for (int j = 0; j < PartyList[i].Count(); j++)
+                        JObject ErrorPacket = new JObject();
+                        ErrorPacket.Add("message", "AlreadyInParty");
+                        SendPacket2Server(ErrorPacket, LeaderPlayer.address, LeaderPlayer.port);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < PartyList.Count; i++)
                         {
-                            if (PartyList[i][j].Equals(LeaderPlayer))
+                            for (int j = 0; j < PartyList[i].Count(); j++)
                             {
-                                if(PartyList[i].Count() < 5)
+                                if (PartyList[i][j].Equals(LeaderPlayer))
                                 {
-                                    PartyList[i] = PartyList[i].Concat(new Address[] { targetPlayer }).ToArray();
-                                    JObject AddMemberPacket = new JObject();
-                                    AddMemberPacket.Add("message", "AddMember");
-                                    AddMemberPacket.Add("member", targetPlayer.nickname);
-                                    AddMemberPacket.Add("memberHP", targetPlayer.hp);
-                                    for (int k = 0; k < PartyList[i].Count(); k++)
+                                    if (PartyList[i].Count() < 5)
                                     {
-                                        if (PartyList[i][k].Equals(targetPlayer))
+                                        PartyList[i] = PartyList[i].Concat(new Address[] { targetPlayer }).ToArray();
+                                        JObject AddMemberPacket = new JObject();
+                                        AddMemberPacket.Add("message", "AddMember");
+                                        AddMemberPacket.Add("member", targetPlayer.nickname);
+                                        AddMemberPacket.Add("memberHP", targetPlayer.hp);
+                                        for (int k = 0; k < PartyList[i].Count(); k++)
                                         {
-                                            //PartyList[i]를 담아 보냄
-                                            //AddMemberPacket.Add("MemberList", );
-                                            JArray MemberArr = GetPartyList(PartyList[i]);
-                                            AddMemberPacket["message"] = "AddedParty";
-                                            AddMemberPacket.Add("memberList", MemberArr);
-                                            Console.WriteLine(AddMemberPacket.ToString());
-                                            SendPacket2Server(AddMemberPacket, PartyList[i][k].address, PartyList[i][k].port);
+                                            if (PartyList[i][k].Equals(targetPlayer))
+                                            {
+                                                //PartyList[i]를 담아 보냄
+                                                //AddMemberPacket.Add("MemberList", );
+                                                JArray MemberArr = GetPartyList(PartyList[i]);
+                                                AddMemberPacket["message"] = "AddedParty";
+                                                AddMemberPacket.Add("memberList", MemberArr);
+                                                //Console.WriteLine(AddMemberPacket.ToString());
+                                                SendPacket2Server(AddMemberPacket, PartyList[i][k].address, PartyList[i][k].port);
+                                            }
+                                            else
+                                            {
+                                                SendPacket2Server(AddMemberPacket, PartyList[i][k].address, PartyList[i][k].port);
+                                            }
                                         }
-                                        else
-                                        {
-                                            SendPacket2Server(AddMemberPacket, PartyList[i][k].address, PartyList[i][k].port);
-                                        }
+                                        break;
                                     }
-                                    break;
-                                }
-                                else
-                                {
-                                    Console.WriteLine("비정상적인 패킷");
+                                    else
+                                    {
+                                        Console.WriteLine("비정상적인 패킷");
+                                    }
                                 }
                             }
                         }
@@ -645,7 +666,7 @@ namespace Cs_Server
                 }
                 else if (player["message"].ToString() == "ArriveParty")
                 {
-                    Address playerName = players.Find((i) => i.nickname == player["playerName"].ToString());
+                    var playerName = players.Find((i) => i.nickname == player["playerName"].ToString());
                     for(int i = 0; i < PartyList.Count; i++)
                     {
                         for (int j = 0; j < PartyList[i].Count(); j++)
@@ -654,8 +675,10 @@ namespace Cs_Server
                             {
                                 PartyList[i] = PartyList[i].Where(var => var.nickname != player["playerName"].ToString()).ToArray();
                                 JObject ArrivePacket = new JObject();
+                                JArray MemberArr = GetPartyList(PartyList[i]);
                                 ArrivePacket.Add("message", "ArriveParty");
                                 ArrivePacket.Add("member", player["playerName"].ToString());
+                                ArrivePacket.Add("memberList", MemberArr);
                                 for (int k = 0; k < PartyList[i].Count(); k++)
                                 {
                                     SendPacket2Server(ArrivePacket, PartyList[i][k].address, PartyList[i][k].port);
@@ -705,6 +728,22 @@ namespace Cs_Server
             {
                 SendPacket2Server(newParty, PartyList[PartyList.Count - 1][i].address, PartyList[PartyList.Count - 1][i].port);
             }
+        }
+
+        private bool CheckInParty(Address target)
+        {
+            bool IsInParty = false;
+            for(int i = 0; i < PartyList.Count; i++)
+            {
+                for(int j = 0; j < PartyList[i].Length; j++)
+                {
+                    if(PartyList[i][j].nickname == target.nickname)
+                    {
+                        IsInParty = true;
+                    }
+                }
+            }
+            return IsInParty;
         }
 
         private void CheckAttack(JObject player)
