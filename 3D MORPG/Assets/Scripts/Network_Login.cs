@@ -270,6 +270,9 @@ public class Network_Login : MonoBehaviour
                 case "ArriveParty":
                     ArriveParty(b);
                     break;
+                case "RemoveParty":
+                    RemoveParty(b);
+                    break;
                 case "AlreadyInParty":
                     AlreadyInParty(connectPlayer);
                     break;
@@ -302,6 +305,13 @@ public class Network_Login : MonoBehaviour
         GameObject.Find("AlertCanvas").transform.FindChild("InPartyPanel").gameObject.SetActive(true);
     }
 
+    void RemoveParty(string b){
+        PartyPacket partyPacket = JsonUtility.FromJson<PartyPacket>(b);
+        GameObject PartyCanvas = GameObject.Find("PartyCanvas");
+        PartyMembers = new List<MemberList>();
+        PartyCanvas.transform.FindChild("PartyPanel").gameObject.SetActive(false);
+        isInParty = false;
+    }
     void AddedParty(string b){
         PartyPacket partyPacket = JsonUtility.FromJson<PartyPacket>(b);
         GameObject PartyCanvas = GameObject.Find("PartyCanvas");

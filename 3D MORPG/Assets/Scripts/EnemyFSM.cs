@@ -51,7 +51,6 @@ public class EnemyFSM : MonoBehaviour
 
         network = GameObject.Find("NetworkManager").GetComponent<Network_Login>();
         string playerName = network.PlayerName;
-        //player = GameObject.Find(playerName).transform;
         playerController = GameObject.Find(playerName).GetComponent<PlayerController>();
         StateA = (int)playerController.PlayerStateAttack;
         enemyInfo = new EnemyInfo();
@@ -68,43 +67,7 @@ public class EnemyFSM : MonoBehaviour
     void UpdateState()
     {
         StateA = (int)playerController.PlayerStateAttack;
-        // switch(currentState)
-        // {
-        //     case State.Idle:
-        //         IdleState();
-        //         break;
-        //     case State.Chase:
-        //         ChaseState();
-        //         break;
-        //     case State.Attack:
-        //         AttackState();
-        //         break;
-        //     case State.Dead:
-        //         DeadState();
-        //         break;
-        //     case State.NoState:
-        //         NoState();
-        //         break;
-        // }
     }
-
-    // void OnTriggerStay(Collider col)
-    // {
-    //     if(StateA == 1)
-    //     {
-    //       if(PlayerAttackTime > 2f)
-    //       {
-    //         //   enemyInfo.hp--;
-    //         //   if(enemyInfo.hp < 0){
-    //         //       Destroy(gameObject);
-    //         //       //패킷..
-    //         //   }
-    //         //피격판정 패킷
-    //         PlayerAttackTime = 0f;
-    //       }
-    //       PlayerAttackTime += Time.deltaTime;
-    //     }
-    // }
 
     public void ChangeState(State newState, string aniName)
     {
@@ -113,58 +76,12 @@ public class EnemyFSM : MonoBehaviour
             return;
         }else{
             enemyInfo.state = newState;
-            //network.SendPacket2CsServer(enemyInfo);
         }
 
         currentState = newState;
         myAni.ChangeAni(aniName);
     }
-
-    // void IdleState()
-    // {
-    //     if(GetDistanceFromPlayer() < chaseDistance)
-    //     {
-    //         ChangeState(State.Chase, EnemyAni.WALK);
-    //     }
-    // }
-
-    // void ChaseState()
-    // {
-    //     if(GetDistanceFromPlayer() < attackDistance)
-    //     {
-    //         ChangeState(State.Attack, EnemyAni.ATTACK);
-    //     }
-    //     else{
-    //         TurnToDestination();
-    //         MoveToDestination();
-    //     }
-    // }
-
-    // void AttackState()
-    // {
-    //     if(GetDistanceFromPlayer() > reChaseDistance)
-    //     {
-    //         attackTimer = 0f;
-    //         ChangeState(State.Chase, EnemyAni.WALK);
-    //     }
-    //     else{
-    //         if(attackTimer > attackDelay)
-    //         {
-    //             //transform.LookAt(player.position);
-    //             myAni.ChangeAni(EnemyAni.ATTACK);
-
-    //             attackTimer = 0f;
-    //         }
-    //         attackTimer += Time.deltaTime;
-    //     }
-    // }
-
     void DeadState()
-    {
-
-    }
-
-    void NoState()
     {
 
     }
@@ -181,9 +98,9 @@ public class EnemyFSM : MonoBehaviour
     {
         Transform player = GameObject.Find(target).GetComponent<Transform>();
         //float distance = GetDistanceFromPlayer();
-        //if(GetDistanceFromPlayer() > 1f){
+        if(GetDistanceFromPlayer() > 2f){
             transform.position = Vector3.MoveTowards(transform.position, player.position, moveSpeed * Time.deltaTime);
-        //}
+        }
         
         ChangeState(State.Chase, EnemyAni.WALK);
         //float x = Mathf.Sin(moveAngle / 180 * Mathf.PI) * 1.5f * Time.deltaTime;

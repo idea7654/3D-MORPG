@@ -641,11 +641,9 @@ namespace Cs_Server
                                             if (PartyList[i][k].Equals(targetPlayer))
                                             {
                                                 //PartyList[i]를 담아 보냄
-                                                //AddMemberPacket.Add("MemberList", );
                                                 JArray MemberArr = GetPartyList(PartyList[i]);
                                                 AddMemberPacket["message"] = "AddedParty";
                                                 AddMemberPacket.Add("memberList", MemberArr);
-                                                //Console.WriteLine(AddMemberPacket.ToString());
                                                 SendPacket2Server(AddMemberPacket, PartyList[i][k].address, PartyList[i][k].port);
                                             }
                                             else
@@ -673,18 +671,32 @@ namespace Cs_Server
                         {
                             if (PartyList[i][j].nickname == player["playerName"].ToString())
                             {
-                                PartyList[i] = PartyList[i].Where(var => var.nickname != player["playerName"].ToString()).ToArray();
-                                JObject ArrivePacket = new JObject();
-                                JArray MemberArr = GetPartyList(PartyList[i]);
-                                ArrivePacket.Add("message", "ArriveParty");
-                                ArrivePacket.Add("member", player["playerName"].ToString());
-                                ArrivePacket.Add("memberList", MemberArr);
-                                for (int k = 0; k < PartyList[i].Count(); k++)
+                                if (PartyList[i][j].isPartyLeader)
                                 {
-                                    SendPacket2Server(ArrivePacket, PartyList[i][k].address, PartyList[i][k].port);
+                                    JObject RemoveParty = new JObject();
+                                    RemoveParty.Add("message", "RemoveParty");
+                                    for (int k = 0; k < PartyList[i].Count(); k++)
+                                    {
+                                        SendPacket2Server(RemoveParty, PartyList[i][k].address, PartyList[i][k].port);
+                                    }
+                                    PartyList.RemoveAll((index) => index.Equals(PartyList[i]));
+                                    break;
                                 }
-                                SendPacket2Server(ArrivePacket, playerName.address, playerName.port);
-                                break;
+                                else
+                                {
+                                    PartyList[i] = PartyList[i].Where(var => var.nickname != player["playerName"].ToString()).ToArray();
+                                    JObject ArrivePacket = new JObject();
+                                    JArray MemberArr = GetPartyList(PartyList[i]);
+                                    ArrivePacket.Add("message", "ArriveParty");
+                                    ArrivePacket.Add("member", player["playerName"].ToString());
+                                    ArrivePacket.Add("memberList", MemberArr);
+                                    for (int k = 0; k < PartyList[i].Count(); k++)
+                                    {
+                                        SendPacket2Server(ArrivePacket, PartyList[i][k].address, PartyList[i][k].port);
+                                    }
+                                    SendPacket2Server(ArrivePacket, playerName.address, playerName.port);
+                                    break;
+                                }
                             }
                         }
                     }
@@ -693,7 +705,6 @@ namespace Cs_Server
                 {
                     moveThread = new Thread(() => PlayerMove(player));
                     moveThread.Start();
-                    //PlayerMove(player);
                 }
             }
             catch(Exception ex)
@@ -758,14 +769,11 @@ namespace Cs_Server
             {
                 double x = Convert.ToDouble(i["x"].ToString());
                 double z = Convert.ToDouble(i["z"].ToString());
-                Console.WriteLine(Math.Sqrt((targetX - x) * (targetX - x) + (targetZ - z) * (targetZ - z)));
                 if(Math.Sqrt((targetX - x) * (targetX - x) + (targetZ - z) * (targetZ - z)) < 5f)
                 {
-                    //Console.WriteLine("작동");
                     i["hp"] = Convert.ToDouble(i["hp"].ToString()) - 5;
                     if (Convert.ToDouble(i["hp"].ToString()) <= 0)
                     {
-                        //enemies.Remove(i);
                         RemoveList.Add(i);
                         JObject RemovePacket = new JObject();
                         RemovePacket.Add("message", "EnemyDie");
@@ -787,7 +795,7 @@ namespace Cs_Server
             lock (enemies)
             {
                 enemies.RemoveAll(RemoveList.Contains);
-                Console.WriteLine(enemies.Count);
+                Respawn();
             }
             
             //범위 지정.
@@ -807,7 +815,6 @@ namespace Cs_Server
         public void PlayerMove(JObject player)
         {
             //클라에 값 전달
-            //double playertime = Single.Parse(player["currentTime"].ToString());
             players.ForEach((address) => SendToAllClient(address, player));
             Address target = players.Find(i => i.nickname == player["nickname"].ToString()); //에러
             target.x = Convert.ToSingle(player["x"].ToString());
@@ -815,7 +822,6 @@ namespace Cs_Server
             target.angle_y = Convert.ToSingle(player["angle_y"].ToString());
             target.move = player["playerMove"].ToString();
             target.currentTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            //Console.WriteLine(DateTimeOffset.Now.ToUnixTimeMilliseconds() - timerasdf);
             moveThread.Interrupt();
         }
 
@@ -832,8 +838,6 @@ namespace Cs_Server
                         {
                             for (int i = 0; i < players.Count; i++)
                             {
-                                //double userX = (double)players[i].x + Math.Sin((double)players[i].angle_y * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
-                                //double userZ = (double)players[i].z + Math.Cos((double)players[i].angle_y * Math.PI / 180) * 3.0f * (DateTimeOffset.Now.ToUnixTimeMilliseconds() - players[i].currentTime) / 1000;
                                 double userX = 0;
                                 double userZ = 0;
                                 double userAngle = (double)players[i].angle_y;

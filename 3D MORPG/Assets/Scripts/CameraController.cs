@@ -31,10 +31,9 @@ public class CameraController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        //target = GameObject.Find(player).transform;
         Network_Login network = GameObject.Find("NetworkManager").GetComponent<Network_Login>();
         player = network.PlayerName;
-        transform.SetParent(GameObject.Find(player).transform);
+        target = GameObject.Find(player).transform;
     }
 
     // Update is called once per frame
