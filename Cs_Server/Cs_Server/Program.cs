@@ -765,6 +765,7 @@ namespace Cs_Server
             float angle = Convert.ToSingle(player["angle_y"].ToString());
             double targetX = (double)playerX + Math.Sin(angle / 180 * Math.PI) * 5;
             double targetZ = (double)playerZ + Math.Cos(angle / 180 * Math.PI) * 5;
+            /*
             enemies.ForEach((i) =>
             {
                 double x = Convert.ToDouble(i["x"].ToString());
@@ -791,7 +792,37 @@ namespace Cs_Server
                         SendPacket2Server(AttackPacket, k.address, k.port);
                     });
                 }
-            });
+            }); //논타겟일 경우
+            */
+            JObject targetEnemy = enemies.Find((var) => var["id"].ToString() == player["target"].ToString());
+            double x = Convert.ToDouble(targetEnemy["x"].ToString());
+            double z = Convert.ToDouble(targetEnemy["z"].ToString());
+            if(Math.Sqrt((targetX - x) * (targetX - x) + (targetZ - z) * (targetZ - z)) < 4f)
+            {
+                targetEnemy["hp"] = Convert.ToDouble(targetEnemy["hp"].ToString()) - 5;
+                if (Convert.ToDouble(targetEnemy["hp"].ToString()) <= 0)
+                {
+                    RemoveList.Add(targetEnemy);
+                    JObject RemovePacket = new JObject();
+                    RemovePacket.Add("message", "EnemyDie");
+                    RemovePacket.Add("id", targetEnemy["id"].ToString());
+                    players.ForEach((t) =>
+                    {
+                        SendPacket2Server(RemovePacket, t.address, t.port);
+                    });
+                }
+                else
+                {
+                    JObject AttackPacket = new JObject();
+                    AttackPacket.Add("message", "PlayerAttackToEnemy");
+                    AttackPacket.Add("id", targetEnemy["id"]);
+                    players.ForEach((k) =>
+                    {
+                        SendPacket2Server(AttackPacket, k.address, k.port);
+                    });
+                }
+            }
+
             lock (enemies)
             {
                 enemies.RemoveAll(RemoveList.Contains);

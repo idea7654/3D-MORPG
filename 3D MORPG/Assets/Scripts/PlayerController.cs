@@ -28,6 +28,7 @@ public class PlayerController : MonoBehaviour
         public PlayerMove playerMove;
         public string message;
         public string nickname;
+        public string target;
         public PlayerStateAttack playerStateAttack;
     }
     CharacterPosition charaPos;
@@ -54,6 +55,7 @@ public class PlayerController : MonoBehaviour
     private long sampleTimer;
     //private float hp = 100f;
     private GameObject[] Hit_Enemy;
+    private targeting targeting;
     private bool flag = true;
     #endregion
 
@@ -78,7 +80,7 @@ public class PlayerController : MonoBehaviour
         charaPos.angle_y = transform.eulerAngles.y;
         charaPos.angle_z = transform.eulerAngles.z;
         NetworkManager = GameObject.Find("NetworkManager").GetComponent<Network_Login>();
-        
+        targeting = GetComponent<targeting>();
         StartCoroutine(CheckMove());
     }
 
@@ -208,17 +210,28 @@ public class PlayerController : MonoBehaviour
 
         if(Input.GetKeyDown(KeyCode.A))
         {
-            if(DateTimeOffset.Now.ToUnixTimeMilliseconds() - Timer > 1000){
-                PlayerStateAttack = PlayerStateAttack.Attack;
-                before_action = PlayerStateAttack.Attack;
-                charaPos.message = "Attack";
-                charaPos.x = transform.position.x;
-                charaPos.y = transform.position.y;
-                charaPos.z = transform.position.z;
-                charaPos.angle_y = transform.eulerAngles.y;
-                NetworkManager.SendPacket2CsServer(charaPos);
-                Invoke("Change2Idle", 0.94f);
-                Timer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            if(targeting.Targeting){
+                if(Vector3.Distance(targeting.Targeting.transform.position, transform.position) < 3f){
+                    if(DateTimeOffset.Now.ToUnixTimeMilliseconds() - Timer > 1000){
+                        PlayerStateAttack = PlayerStateAttack.Attack;
+                        before_action = PlayerStateAttack.Attack;
+                        charaPos.message = "Attack";
+                        charaPos.x = transform.position.x;
+                        charaPos.y = transform.position.y;
+                        charaPos.z = transform.position.z;
+                        charaPos.angle_y = transform.eulerAngles.y;
+                        charaPos.target = targeting.Targeting.name;
+                        NetworkManager.SendPacket2CsServer(charaPos);
+                        Invoke("Change2Idle", 0.94f);
+                        Timer = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                    }else{
+                        Debug.Log("쿨타임입니다");
+                    }
+                }else{
+                    Debug.Log("타겟이 사정범위 안에 없습니다");
+                }
+            }else{
+                Debug.Log("타겟이 없습니다");
             }
         }
     }
