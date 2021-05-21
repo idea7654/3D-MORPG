@@ -810,6 +810,7 @@ namespace Cs_Server
                     {
                         SendPacket2Server(RemovePacket, t.address, t.port);
                     });
+                    //여기서 SQL로 아이템 추가 입력...
                 }
                 else
                 {
