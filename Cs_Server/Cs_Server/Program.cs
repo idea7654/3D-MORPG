@@ -53,7 +53,7 @@ namespace Cs_Server
         public static List<Address> players;
         public static List<JObject> enemies;
         
-        private static ConnectionMultiplexer connection = ConnectionMultiplexer.Connect(("127.0.0.1:6379,password=osm980811"));
+        public static ConnectionMultiplexer connection = ConnectionMultiplexer.Connect(("127.0.0.1:6379,password=osm980811"));
         private const string SessionChannel = "Session"; // Can be anything we want.
         public static bool OverLogin = false;
         public static NetWork networkClass = new NetWork();//네트워크 클래스 사용할 객체 생성
@@ -160,6 +160,7 @@ namespace Cs_Server
                 networkClass.setPlayers(ref players); //네트워크 클래스의 players와 연동
                 string query = "SELECT * FROM Player WHERE nickname='" + userInfo["nickname"].ToString() + "'";
                 Sql_Read(players, address, query); // 새로 접속한 플레이어의 정보만을 db에서 찾아내고 모든 클라에 보냄
+                Sql_PlayerItem(address);
                 Sql_ToOnLine(address.nickname);//접속해서 온라인상태로 변경
                 networkClass.SendInitialEnemy(address);
             }
@@ -254,6 +255,53 @@ namespace Cs_Server
             }
         }
 
+        private static void Sql_PlayerItem(Address address)
+        {
+            using (MySqlConnection connection = new MySqlConnection("Server=localhost;Port=3306;Database=MORPG;Uid=root;Pwd=osm980811"))
+            {
+                string query = "SELECT * FROM player_item WHERE player_name='" + address.nickname + "'";
+                try
+                {
+                    connection.Open();
+                    MySqlCommand command = new MySqlCommand(query, connection);
+                    MySqlDataReader table = command.ExecuteReader();
+
+                    while (table.Read())
+                    {
+                        //소켓으로 데이터 전송
+                        /*
+                        void ConnectNewUser(Address s)
+                        {
+                            if (s.address == address.address && s.port == address.port) //서버에 접속중인 플레이어들 중 자신이라면
+                            {
+                                Util util = new Util();
+                                JObject packet = util.CreateJson("Connect", table); //Connect메시지로 보내고
+                                networkClass.SendPacket2Server(packet, s.address, s.port);
+                            }
+                            else //서버에 접속중인 플레이어들 중 자신이 아니라면
+                            {
+                                //otherjson.Add("message", "OtherPlayers");
+                                Util util = new Util();
+                                JObject packet = util.CreateJson("OtherPlayers", table); //OtherPlayers메시지로 보냄
+                                networkClass.SendPacket2Server(packet, s.address, s.port);
+                            }
+                        }*/
+                        Console.WriteLine(table["player_name"].ToString());
+                        JObject itemInfo = new JObject();
+                        itemInfo.Add("message", "setItem");
+                        itemInfo.Add("item_name", table["item_name"].ToString());
+                        itemInfo.Add("count", Convert.ToUInt32(table["count"].ToString()));
+                    }
+                    table.Close();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("실패");
+                    Console.WriteLine(ex.ToString());
+                }
+            }
+        }
+
         private static void Sql_ToOnLine(string nickname)
         {
             //처음 접속한 유저를 온라인상태로 변경(DB에서)
@@ -294,6 +342,32 @@ namespace Cs_Server
                     command.ExecuteNonQuery();
                 }
                 catch(Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+            }
+        }
+
+        public static void Sql_GetItem(JObject player, string item)
+        {
+            using (MySqlConnection connection = new MySqlConnection("Server=localhost;Port=3306;Database=MORPG;Uid=root;Pwd=osm980811"))
+            {
+                try
+                {
+                    connection.Open();
+                    MySqlCommand command = new MySqlCommand("UPDATE player_item SET count=count+1 WHERE player_name='" + player["nickname"].ToString() + "'AND item_name='" + item + "'", connection);
+                    command.ExecuteNonQuery();
+                    if (command.ExecuteNonQuery() == 1)
+                    {
+                        //Console.WriteLine("수정 성공");
+                    }
+                    else
+                    {
+                        MySqlCommand CreateCommand = new MySqlCommand("INSERT INTO player_item (player_name, item_name, count) values ('" + player["nickname"].ToString() + "','" + item + "', 1)", connection);
+                        CreateCommand.ExecuteNonQuery();
+                    }
+                }
+                catch (Exception ex)
                 {
                     Console.WriteLine(ex);
                 }
@@ -805,12 +879,14 @@ namespace Cs_Server
                     RemoveList.Add(targetEnemy);
                     JObject RemovePacket = new JObject();
                     RemovePacket.Add("message", "EnemyDie");
+                    //RemovePacket.Add("GetItem", "hp_potion");
                     RemovePacket.Add("id", targetEnemy["id"].ToString());
                     players.ForEach((t) =>
                     {
                         SendPacket2Server(RemovePacket, t.address, t.port);
                     });
                     //여기서 SQL로 아이템 추가 입력...
+                    Program.Sql_GetItem(player, "hp_potion");
                 }
                 else
                 {
@@ -1097,3 +1173,4 @@ namespace Cs_Server
         }
     }
 }
+//select S.nickname, C.item_name, count from player S inner join player_item SC on S.nickname = SC.player_name inner join items C on SC.item_name = C.item_name; -> 연결테이블 조회
