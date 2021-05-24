@@ -159,8 +159,8 @@ namespace Cs_Server
                 players.Add(address); //새로 접속한 플레이어를 월드 접속중에 추가
                 networkClass.setPlayers(ref players); //네트워크 클래스의 players와 연동
                 string query = "SELECT * FROM Player WHERE nickname='" + userInfo["nickname"].ToString() + "'";
+                Sql_PlayerItem(address); //유저 아이템 정보를 접속한 플레이어한테 보냄
                 Sql_Read(players, address, query); // 새로 접속한 플레이어의 정보만을 db에서 찾아내고 모든 클라에 보냄
-                Sql_PlayerItem(address);
                 Sql_ToOnLine(address.nickname);//접속해서 온라인상태로 변경
                 networkClass.SendInitialEnemy(address);
             }
@@ -286,11 +286,11 @@ namespace Cs_Server
                                 networkClass.SendPacket2Server(packet, s.address, s.port);
                             }
                         }*/
-                        Console.WriteLine(table["player_name"].ToString());
                         JObject itemInfo = new JObject();
-                        itemInfo.Add("message", "setItem");
+                        itemInfo.Add("message", "SetItem");
                         itemInfo.Add("item_name", table["item_name"].ToString());
                         itemInfo.Add("count", Convert.ToUInt32(table["count"].ToString()));
+                        networkClass.SendPacket2Server(itemInfo, address.address, address.port);
                     }
                     table.Close();
                 }
@@ -356,15 +356,27 @@ namespace Cs_Server
                 {
                     connection.Open();
                     MySqlCommand command = new MySqlCommand("UPDATE player_item SET count=count+1 WHERE player_name='" + player["nickname"].ToString() + "'AND item_name='" + item + "'", connection);
-                    command.ExecuteNonQuery();
+                    //command.ExecuteNonQuery();
                     if (command.ExecuteNonQuery() == 1)
                     {
                         //Console.WriteLine("수정 성공");
+                        //추가했다는 패킷
+                        JObject GetItemPacket = new JObject();
+                        GetItemPacket.Add("message", "GetItem");
+                        GetItemPacket.Add("item_name", item);
+                        Address Attacker = players.Find((i) => i.nickname == player["nickname"].ToString());
+                        networkClass.SendPacket2Server(GetItemPacket, Attacker.address, Attacker.port);
                     }
                     else
                     {
                         MySqlCommand CreateCommand = new MySqlCommand("INSERT INTO player_item (player_name, item_name, count) values ('" + player["nickname"].ToString() + "','" + item + "', 1)", connection);
                         CreateCommand.ExecuteNonQuery();
+                        JObject GetNewItem = new JObject();
+                        GetNewItem.Add("message", "GetNewItem");
+                        GetNewItem.Add("item_name", item);
+                        Address Attacker = players.Find((i) => i.nickname == player["nickname"].ToString());
+                        networkClass.SendPacket2Server(GetNewItem, Attacker.address, Attacker.port);
+                        //새 아이템을 먹은 패킷
                     }
                 }
                 catch (Exception ex)

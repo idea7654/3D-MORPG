@@ -85,6 +85,12 @@ public class Network_Login : MonoBehaviour
         public MemberList[] memberList;
     }
 
+    public class ItemPacket{
+        public string message;
+        public string item_name;
+        public float count;
+    }
+
     public enum PlayerMove{
         stop = 0,
         turn_left = 1,
@@ -104,6 +110,7 @@ public class Network_Login : MonoBehaviour
     public bool isInParty = false;
 
     public List<MemberList> PartyMembers = new List<MemberList>();
+    public List<ItemPacket> items = new List<ItemPacket>();
     #endregion
     // Start is called before the first frame update
     public string PlayerName;
@@ -276,6 +283,12 @@ public class Network_Login : MonoBehaviour
                 case "AlreadyInParty":
                     AlreadyInParty(connectPlayer);
                     break;
+                case "SetItem":
+                    SetItem(b);
+                    break;
+                case "GetItem":
+                    GetItem(b);
+                    break;
                 default:
                     break;
             }
@@ -303,6 +316,18 @@ public class Network_Login : MonoBehaviour
 
     void AlreadyInParty(Player player){
         GameObject.Find("AlertCanvas").transform.FindChild("InPartyPanel").gameObject.SetActive(true);
+    }
+
+    void SetItem(string b){
+        ItemPacket itemPacket = JsonUtility.FromJson<ItemPacket>(b);
+        items.Add(itemPacket);
+    }
+
+    void GetItem(string b){
+        ItemPacket itemPacket = JsonUtility.FromJson<ItemPacket>(b);
+        int target = items.FindIndex((i) => i.item_name == itemPacket.item_name);
+        //target.count++;
+        GameObject.Find("Inventory").GetComponent<Inventory>().UpdateInventory(target);
     }
 
     void RemoveParty(string b){
@@ -416,10 +441,12 @@ public class Network_Login : MonoBehaviour
         // if(Vector3.Distance(Enemy.transform.position, new Vector3(Convert.ToSingle(enemyPacket.x), 0, Convert.ToSingle(enemyPacket.z))) > 1f){
         //    Debug.Log("이탈!!");
         // }
-        Enemy.GetComponent<EnemyFSM>().enemyState = enemyPacket.message;
-        Enemy.GetComponent<EnemyFSM>().target = enemyPacket.target;
-        Enemy.GetComponent<EnemyFSM>().attack = enemyPacket.attack;
-        Enemy.GetComponent<EnemyFSM>().moveAngle = Convert.ToSingle(enemyPacket.angle_y);
+        if(Enemy){
+            Enemy.GetComponent<EnemyFSM>().enemyState = enemyPacket.message;
+            Enemy.GetComponent<EnemyFSM>().target = enemyPacket.target;
+            Enemy.GetComponent<EnemyFSM>().attack = enemyPacket.attack;
+            Enemy.GetComponent<EnemyFSM>().moveAngle = Convert.ToSingle(enemyPacket.angle_y);
+        }
     }
 
     void EnemyAI_ToIdle(string b)
