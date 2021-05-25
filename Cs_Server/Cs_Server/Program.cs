@@ -58,6 +58,8 @@ namespace Cs_Server
         public static bool OverLogin = false;
         public static NetWork networkClass = new NetWork();//네트워크 클래스 사용할 객체 생성
 
+        public static float hp_potion_value = 50f;
+
         static void Main(string[] args)
         {
             NetWork useSocket = new NetWork(); //네트워크 클래스의 소켓을 사용하기 위함
@@ -382,6 +384,45 @@ namespace Cs_Server
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex);
+                }
+            }
+        }
+
+        public static void Sql_UseItem(JObject player)
+        {
+            using (MySqlConnection connection = new MySqlConnection("Server=localhost;Port=3306;Database=MORPG;Uid=root;Pwd=osm980811"))
+            {
+                try
+                {
+                    connection.Open();
+                    MySqlCommand command = new MySqlCommand("UPDATE player_item SET count=count-1 WHERE player_name='" + player["nickname"].ToString() + "'AND item_name='" + player["item_name"].ToString() + "'", connection);
+
+                    if (command.ExecuteNonQuery() == 1)
+                    {
+                        Address targetPlayer = players.Find((i) => i.nickname == player["nickname"].ToString());
+                        
+                        if(targetPlayer.hp + hp_potion_value > 100)
+                        {
+                            targetPlayer.hp = 100;
+                        }
+                        else
+                        {
+                            targetPlayer.hp += hp_potion_value; //현재는 hp포션을 사용했을 때만..
+                        }
+                        JObject ItemUsePacket = new JObject();
+                        ItemUsePacket.Add("message", "useItem");
+                        ItemUsePacket.Add("item_name", player["item_name"].ToString());
+                        ItemUsePacket.Add("hp", targetPlayer.hp);
+                        networkClass.SendPacket2Server(ItemUsePacket, targetPlayer.address, targetPlayer.port);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Error");
+                    }
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
                 }
             }
         }
@@ -787,6 +828,10 @@ namespace Cs_Server
                         }
                     }
                 }
+                else if(player["message"].ToString() == "useItem")
+                {
+                    UseItem(player);
+                }
                 else
                 {
                     moveThread = new Thread(() => PlayerMove(player));
@@ -797,6 +842,11 @@ namespace Cs_Server
             {
                 Console.WriteLine(ex);
             }
+        }
+
+        private void UseItem(JObject player)
+        {
+            Program.Sql_UseItem(player);
         }
 
         private JArray GetPartyList(Address[] PartyList)

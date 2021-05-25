@@ -20,6 +20,7 @@ public class Inventory : MonoBehaviour
             if(network.items[i].item_name == "hp_potion"){
                 //transform.GetChild(0).transform.GetChild(1).transform.GetChild(0).transform.GetChild(0).transform.GetChild(i).transform.GetChild(0).GetComponent<RawImage>().Texture = hp_potion;
                 Transform target = transform.GetChild(0).transform.GetChild(1).transform.GetChild(0).transform.GetChild(0).transform.GetChild(i);
+                target.name = "hp_potion";
                 target.GetChild(0).GetComponent<RawImage>().texture = hp_potion;
                 target.GetChild(1).gameObject.SetActive(true);
                 target.GetChild(1).GetComponent<TextMeshProUGUI>().text = network.items[i].count.ToString();
@@ -37,9 +38,16 @@ public class Inventory : MonoBehaviour
         }
     }
 
-    public void UpdateInventory(int index)
+    public void UpdatePlusInventory(int index)
     {
         network.items[index].count += 1;
+        Transform target = transform.GetChild(0).transform.GetChild(1).transform.GetChild(0).transform.GetChild(0).transform.GetChild(index);
+        target.GetChild(1).GetComponent<TextMeshProUGUI>().text = network.items[index].count.ToString();
+    }
+
+    public void UpdateMinusInventory(int index)
+    {
+        network.items[index].count -= 1;
         Transform target = transform.GetChild(0).transform.GetChild(1).transform.GetChild(0).transform.GetChild(0).transform.GetChild(index);
         target.GetChild(1).GetComponent<TextMeshProUGUI>().text = network.items[index].count.ToString();
     }

@@ -89,6 +89,7 @@ public class Network_Login : MonoBehaviour
         public string message;
         public string item_name;
         public float count;
+        public float hp;
     }
 
     public enum PlayerMove{
@@ -289,6 +290,9 @@ public class Network_Login : MonoBehaviour
                 case "GetItem":
                     GetItem(b);
                     break;
+                case "useItem":
+                    UseItem(b);
+                    break;
                 default:
                     break;
             }
@@ -327,7 +331,15 @@ public class Network_Login : MonoBehaviour
         ItemPacket itemPacket = JsonUtility.FromJson<ItemPacket>(b);
         int target = items.FindIndex((i) => i.item_name == itemPacket.item_name);
         //target.count++;
-        GameObject.Find("Inventory").GetComponent<Inventory>().UpdateInventory(target);
+        GameObject.Find("Inventory").GetComponent<Inventory>().UpdatePlusInventory(target);
+    }
+
+    void UseItem(string b){
+        ItemPacket itemPacket = JsonUtility.FromJson<ItemPacket>(b);
+        int target = items.FindIndex((i) => i.item_name == itemPacket.item_name);
+        GameObject.Find("Inventory").GetComponent<Inventory>().UpdateMinusInventory(target);
+        Slider slider = GameObject.Find("HPBar").GetComponent<Slider>();
+        slider.value = itemPacket.hp / 100;
     }
 
     void RemoveParty(string b){
